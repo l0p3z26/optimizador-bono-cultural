@@ -66,6 +66,13 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 .strat-btn.active{border-color:var(--purple);background:rgba(124,58,237,.14);color:var(--purpleL);box-shadow:0 0 0 1px rgba(124,58,237,.3)}
 .strat-btn strong{display:flex;align-items:center;justify-content:center;gap:6px;font-size:1rem;margin-bottom:4px;color:var(--text)}
 .strat-btn.active strong{color:var(--purpleL)}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cat-card{padding:20px 16px;border-radius:12px;border:1px solid var(--border);background:var(--card2);color:var(--text2);cursor:pointer;text-align:center;transition:.18s var(--ease);display:flex;flex-direction:column;align-items:center;gap:6px}
+.cat-card:hover{border-color:rgba(124,58,237,.5);transform:translateY(-2px);box-shadow:var(--sh)}
+.cat-ic{color:var(--purpleL);margin-bottom:2px}
+.cat-card strong{color:var(--text);font-size:.98rem;line-height:1.35}
+.cat-budget{display:inline-block;font-size:1.1rem;font-weight:800;color:var(--purpleL);margin:4px 0}
+.cat-card p{font-size:.8rem;color:var(--text3);line-height:1.5}
 .poss-btns{display:flex;gap:8px}
 .poss-btn{width:46px;height:46px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--card2);color:var(--text2);cursor:pointer;font-size:1.1rem;font-weight:700;transition:.18s var(--ease);display:flex;align-items:center;justify-content:center}
 .poss-btn:hover{border-color:rgba(59,130,246,.5)}
@@ -169,7 +176,7 @@ tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--purple)}
 .check-item .icon{color:var(--purpleL);margin-top:1px}
 .info-box{background:rgba(124,58,237,.05);border:1px solid rgba(124,58,237,.15);border-radius:var(--r-sm);padding:14px;font-size:.84rem;color:var(--text2);line-height:1.6}
 .info-box strong{display:inline-flex;align-items:center;gap:7px}
-@media(max-width:680px){.metrics-grid{grid-template-columns:1fr 1fr}.charts-grid{grid-template-columns:1fr}.checklist-grid{grid-template-columns:1fr}.manual-grid{grid-template-columns:1fr}.strat-btns{grid-template-columns:1fr}}
+@media(max-width:680px){.metrics-grid{grid-template-columns:1fr 1fr}.charts-grid{grid-template-columns:1fr}.checklist-grid{grid-template-columns:1fr}.manual-grid{grid-template-columns:1fr}.strat-btns{grid-template-columns:1fr}.cat-grid{grid-template-columns:1fr}}
 @media(max-width:480px){.brand{flex-direction:column;text-align:center}}
 </style>
 </head>
@@ -232,7 +239,7 @@ function icon(name, opts) {
 // STATE
 // ============================================================
 let state = {
-  screen: "setup",   // setup | loading | results | error | manual
+  screen: "category", // category | setup | loading | results | error | manual | setupArtes | loadingArtes | resultsArtes | errorArtes
   budget: 100,
   strategy: "cash",  // cash | voucher | balanced
   possibilities: 3,
@@ -250,6 +257,15 @@ let state = {
   manualGames: [],
   store: "fnac",   // fnac | game | corteingles
   turnstileToken: null,
+
+  // ---- Apartado "Artes en vivo, patrimonio y medios de creacion artistica" (200 EUR) ----
+  artesBudget: 200,       // fijo, no editable por el usuario (limite legal del apartado)
+  artesPossibilities: 3,
+  artesData: null,        // { items, possibilities, analysis_datetime, ... }
+  artesSelPoss: 0,
+  artesLoadStep: 0,
+  artesError: null,
+  artesAnalysisTime: null,
 };
 
 const chartInst = {};
@@ -501,6 +517,145 @@ function generatePossibilities(pool, budget, strategy, count) {
 }
 
 // ============================================================
+// ARTES EN VIVO, PATRIMONIO Y MEDIOS DE CREACION ARTISTICA (200€)
+// Motor paralelo: misma logica de recuperacion/perdida que arriba,
+// mas diversificacion con penalizacion por repeticion e historial
+// persistente (localStorage) para no recomendar siempre lo mismo.
+// ============================================================
+const ARTES_HISTORY_KEY = "bonoCultural_artesHistory_v1";
+const ARTES_STOPWORDS = new Set(["de","la","el","los","las","con","para","por","un","una","y","en","del","al"]);
+const ARTES_REPEAT_PENALTY_STEP = 2;   // puntos restados por cada vez que se ha recomendado antes
+const ARTES_REPEAT_PENALTY_CAP = 12;   // tope maximo de penalizacion (nunca puede tapar una gran diferencia de rentabilidad)
+const ARTES_LEVEL_BONUS = { alta: 3, media: 1, baja: -2 };
+
+function loadArtesHistory() {
+  try {
+    const raw = localStorage.getItem(ARTES_HISTORY_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function saveArtesHistory(history) {
+  try { localStorage.setItem(ARTES_HISTORY_KEY, JSON.stringify(history)); } catch {}
+}
+
+// Normaliza el nombre para detectar el "mismo modelo" aunque cambie
+// ligeramente el nombre comercial o el orden de las palabras.
+function normalizeArtesKey(name) {
+  const words = String(name || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(w => w && !ARTES_STOPWORDS.has(w))
+    .sort();
+  return words.join(" ");
+}
+
+function normalizeArtItems(raw, budget) {
+  return (raw || [])
+    .filter(it =>
+      it.name && String(it.name).trim() &&
+      +it.purchase_price > 0 && +it.resale_value > 0 &&
+      +it.purchase_price <= budget &&
+      String(it.purchase_availability || "").toLowerCase() !== "no disponible"
+    )
+    .map(it => {
+      const pp = +it.purchase_price, rv = +it.resale_value;
+      return {
+        name: String(it.name).trim(),
+        platform: String(it.category || "Otros"),   // reutiliza el campo "platform" como categoria/tipo
+        brand: String(it.brand || ""),
+        fnac_price: pp,          // reutiliza el motor generico: precio de compra
+        cex_cash_price: rv,      // reutiliza el motor generico: valor de reventa
+        cex_voucher_price: rv,   // este apartado no tiene vale; se refleja el mismo valor real (no se inventa otro)
+        fnac_availability: it.purchase_availability || "Disponible",
+        fnac_url: it.purchase_url || "",
+        cex_url: it.resale_url || "",
+        image_url: it.image_url || "",
+        resale_market: String(it.resale_market || ""),
+        demand_level: String(it.demand_level || "media").toLowerCase(),
+        resale_ease: String(it.resale_ease || "media").toLowerCase(),
+        valuation_confidence: String(it.valuation_confidence || "media").toLowerCase(),
+        cash_pct: pp > 0 ? (rv / pp) * 100 : 0,
+        voucher_pct: pp > 0 ? (rv / pp) * 100 : 0,
+        cash_loss: pp - rv,
+        voucher_loss: pp - rv,
+        risk: riskOf({ fnac_price: pp, cex_cash_price: rv }),
+        qty: 1,
+      };
+    });
+}
+
+// Puntuacion compuesta: la rentabilidad manda siempre; fiabilidad,
+// facilidad de reventa y demanda suman poco; la repeticion resta,
+// pero con un tope que jamas puede superar una diferencia grande
+// de rentabilidad real (ver ejemplo en el enunciado de la funcionalidad).
+function computeArtesScore(item, history) {
+  const key = normalizeArtesKey(item.name);
+  const timesRecommended = (history[key] && history[key].count) || 0;
+
+  let score = item.cash_pct;
+  score += ARTES_LEVEL_BONUS[item.resale_ease] || 0;
+  score += ARTES_LEVEL_BONUS[item.demand_level] || 0;
+  score += ARTES_LEVEL_BONUS[item.valuation_confidence] || 0;
+  score -= Math.min(timesRecommended * ARTES_REPEAT_PENALTY_STEP, ARTES_REPEAT_PENALTY_CAP);
+
+  return score;
+}
+
+function runGreedyArtes(pool, budget, history) {
+  const sorted = pool
+    .map(g => ({ ...g, _score: computeArtesScore(g, history) }))
+    .sort((a, b) => b._score - a._score);
+
+  let rem = budget;
+  const out = [];
+  const used = new Set();
+
+  for (const g of sorted) {
+    if (!used.has(g.name) && rem >= g.fnac_price) {
+      out.push({ ...g, qty: 1 });
+      rem -= g.fnac_price;
+      used.add(g.name);
+    }
+  }
+  for (const g of sorted) {
+    if (rem < 5) break;
+    if (rem >= g.fnac_price) {
+      const ex = out.find(x => x.name === g.name);
+      if (ex && ex.qty < 2) { ex.qty++; rem -= g.fnac_price; }
+    }
+  }
+  return out;
+}
+
+// Genera N posibilidades reutilizando el mismo historial persistente,
+// y ademas simula dentro de esta misma tanda que cada producto ya
+// elegido "cuenta" para la siguiente posibilidad, para que #2, #3...
+// tiendan a variar tambien entre si sin perder rentabilidad real.
+function generatePossibilitiesArtes(pool, budget, count) {
+  const persistentHistory = loadArtesHistory();
+  const runHistory = JSON.parse(JSON.stringify(persistentHistory));
+  const results = [];
+
+  for (let i = 0; i < count; i++) {
+    const combo = runGreedyArtes(pool, budget, runHistory);
+    results.push({ ...calcMetrics(combo, budget), label: "Combinacion #" + (i + 1), rank: i + 1 });
+
+    combo.forEach(g => {
+      const key = normalizeArtesKey(g.name);
+      const prevCount = (runHistory[key] && runHistory[key].count) || 0;
+      runHistory[key] = { count: prevCount + 1, lastSeen: new Date().toISOString(), label: g.name };
+    });
+  }
+
+  saveArtesHistory(runHistory);
+  results.sort((a, b) => b.cashPct - a.cashPct);
+  return results;
+}
+
+// ============================================================
 // ANALYSIS ENTRY POINT
 // ============================================================
 async function analyzeGames() {
@@ -591,6 +746,100 @@ Devuelve UNICAMENTE este JSON exacto (sin nada mas, ni antes ni despues):
   } catch (err) {
     state.error = err.message || String(err);
     state.screen = "error";
+    render();
+  }
+}
+
+// ============================================================
+// ANALYSIS ENTRY POINT — ARTES EN VIVO / PATRIMONIO (200€)
+// ============================================================
+async function analyzeArtItems() {
+  if (!state.turnstileToken) {
+    alert("Completa la verificacion de que no eres un robot antes de analizar.");
+    return;
+  }
+  const humanToken = state.turnstileToken;
+  resetTurnstile();
+
+  state.screen = "loadingArtes";
+  state.artesLoadStep = 1;
+  state.artesError = null;
+  render();
+
+  const sysPrompt = `Eres un buscador de productos fisicos elegibles en la categoria "Artes en vivo, patrimonio y medios de creacion artistica" del Bono Cultural Joven en Espana, especializado en medios de creacion artistica con mercado de reventa activo (instrumentos musicales, equipos de fotografia y creacion audiovisual, material de bellas artes de gama alta, etc.).
+CRITICO: Responde UNICAMENTE con un objeto JSON valido, sin texto adicional, sin markdown, sin explicaciones.
+Solo incluye productos FISICOS Y TANGIBLES comprables dentro de esta categoria del Bono Cultural. No incluyas entradas a espectaculos, museos ni experiencias, porque no se pueden revender.
+Si no puedes verificar un precio de compra y un valor de reventa realista, excluye ese producto.
+Nunca inventes precios, disponibilidad ni URLs.
+Si no puedes buscar en internet, responde con: {"error":"sin_acceso_web","items":[]}`;
+
+  const now = new Date();
+  const nowStr = now.toLocaleString("es-ES", { timeZone: "Europe/Madrid" });
+  const isoNow = now.toISOString().slice(0, 19);
+
+  const userMsg = `Fecha y hora actual: ${nowStr}. Presupuesto maximo por unidad: ${state.artesBudget}€ (apartado "Artes en vivo, patrimonio y medios de creacion artistica" del Bono Cultural Joven).
+
+Busca productos fisicos y tangibles elegibles en esta categoria (instrumentos musicales, equipos de creacion audiovisual o fotografica, material de bellas artes de gama alta, etc.) con precio de venta <= ${state.artesBudget}€, disponibles para compra en tiendas que acepten el Bono Cultural.
+Para cada producto, busca un valor de reventa realista en mercados de segunda mano (Wallapop, eBay, tiendas especializadas de segunda mano) y estima su nivel de demanda, facilidad de reventa y fiabilidad de la tasacion (alta, media o baja).
+Incluye solo productos con datos completos y verificados.
+Busca al menos 8 productos distintos si es posible, de marcas y categorias variadas para permitir diversificacion (no solo instrumentos: tambien equipos de creacion audiovisual y material artistico si aplica).
+
+Devuelve UNICAMENTE este JSON exacto (sin nada mas, ni antes ni despues):
+{"analysis_datetime":"${isoNow}","timezone":"Europe/Madrid","items":[{"name":"","category":"","brand":"","purchase_price":0,"purchase_availability":"Disponible","purchase_url":"","image_url":"","resale_value":0,"resale_market":"","resale_url":"","demand_level":"media","resale_ease":"media","valuation_confidence":"media","notes":""}],"errors":[]}`;
+
+  try {
+    state.artesLoadStep = 2;
+    render();
+
+    const rawText = await callGemini(sysPrompt, userMsg, humanToken);
+
+    state.artesLoadStep = 3;
+    render();
+
+    const json = extractJSON(rawText);
+
+    if (!json) {
+      throw new Error(
+        "No se han podido verificar datos oficiales en tiempo real.\n" +
+        "El analisis no puede generarse sin precios y valores de reventa actuales confirmados.\n\n" +
+        "Causa probable: busqueda web no disponible o error al acceder a las fuentes.\n" +
+        "Reintentalo en unos minutos."
+      );
+    }
+
+    if (json.error === "sin_acceso_web" || !Array.isArray(json.items)) {
+      throw new Error(
+        "La busqueda web en tiempo real no esta disponible en este momento.\n" +
+        "No se han podido consultar tiendas ni mercados de reventa.\n\n" +
+        "Reintentalo en unos minutos."
+      );
+    }
+
+    const valid = normalizeArtItems(json.items, state.artesBudget);
+
+    if (valid.length === 0) {
+      throw new Error(
+        "No se encontraron productos verificados con los datos recibidos.\n" +
+        "Posibles causas: sin productos con reventa fiable dentro de 200€, o datos incompletos.\n\n" +
+        "Prueba a reintentar en unos minutos."
+      );
+    }
+
+    state.artesLoadStep = 4;
+    render();
+
+    const poss = generatePossibilitiesArtes(valid, state.artesBudget, state.artesPossibilities);
+
+    state.artesData = { ...json, items: valid, possibilities: poss };
+    state.artesAnalysisTime = now;
+    state.artesSelPoss = 0;
+    state.screen = "resultsArtes";
+    render();
+    setTimeout(initChartsArtes, 160);
+
+  } catch (err) {
+    state.artesError = err.message || String(err);
+    state.screen = "errorArtes";
     render();
   }
 }
@@ -717,6 +966,91 @@ function initCharts() {
   }
 }
 
+const chartInstArtes = {};
+
+function destroyChartsArtes() {
+  Object.values(chartInstArtes).forEach(c => { try { c.destroy(); } catch {} });
+  Object.keys(chartInstArtes).forEach(k => delete chartInstArtes[k]);
+}
+
+function initChartsArtes() {
+  destroyChartsArtes();
+  const poss = state.artesData?.possibilities?.[state.artesSelPoss];
+  if (!poss?.games?.length) return;
+
+  const g = poss.games;
+  const labels = g.map(x => x.name.length > 13 ? x.name.slice(0, 13) + "…" : x.name);
+
+  const base = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: { legend: { labels: { color: "#94a3b8", font: { size: 10 } } } },
+    scales: {
+      x: { ticks: { color: "#64748b", font: { size: 9 } }, grid: { color: "#1a1d35" } },
+      y: { ticks: { color: "#64748b", font: { size: 9 } }, grid: { color: "#1a1d35" } }
+    }
+  };
+
+  const c1 = document.getElementById("ch-cmp-artes");
+  if (c1) chartInstArtes.cmp = new Chart(c1, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "Precio compra", data: g.map(x => x.fnac_price),      backgroundColor: "#3b82f6" },
+        { label: "Valor reventa", data: g.map(x => x.cex_cash_price), backgroundColor: "#10b981" },
+      ]
+    },
+    options: base
+  });
+
+  const c2 = document.getElementById("ch-cat-artes");
+  if (c2) {
+    const cats = {};
+    g.forEach(x => { cats[x.platform] = (cats[x.platform] || 0) + x.fnac_price * x.qty; });
+    chartInstArtes.cat = new Chart(c2, {
+      type: "doughnut",
+      data: {
+        labels: Object.keys(cats),
+        datasets: [{ data: Object.values(cats), backgroundColor: ["#7c3aed","#3b82f6","#10b981","#f59e0b","#ef4444","#ec4899"] }]
+      },
+      options: { responsive: true, plugins: { legend: { labels: { color: "#94a3b8", font: { size: 10 } } } } }
+    });
+  }
+
+  const c3 = document.getElementById("ch-ret-artes");
+  if (c3) chartInstArtes.ret = new Chart(c3, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        label: "% Recuperado",
+        data: g.map(x => +x.cash_pct.toFixed(1)),
+        backgroundColor: g.map(x => x.cash_pct >= 100 ? "#10b981" : x.cash_pct >= 80 ? "#3b82f6" : x.cash_pct >= 60 ? "#f59e0b" : "#ef4444")
+      }]
+    },
+    options: {
+      ...base,
+      scales: { ...base.scales, y: { ...base.scales.y, ticks: { ...base.scales.y.ticks, callback: v => v + "%" } } }
+    }
+  });
+
+  const c4 = document.getElementById("ch-poss-artes");
+  if (c4 && state.artesData.possibilities.length > 1) {
+    const p = state.artesData.possibilities;
+    chartInstArtes.poss = new Chart(c4, {
+      type: "bar",
+      data: {
+        labels: p.map((_, i) => "#" + (i + 1)),
+        datasets: [
+          { label: "Recuperado", data: p.map(x => +x.totalCash.toFixed(2)), backgroundColor: "#10b981" },
+        ]
+      },
+      options: base
+    });
+  }
+}
+
 // ============================================================
 // PDF EXPORT
 // ============================================================
@@ -823,19 +1157,25 @@ function render() {
   if (!app) return;
 
   let html = '<div class="app">';
-  if (state.screen === "setup")   html += renderSetup();
-  if (state.screen === "loading") html += renderLoading();
-  if (state.screen === "results") html += renderResults();
-  if (state.screen === "error")   html += renderError();
-  if (state.screen === "manual")  html += renderManual();
-  if (state.showModal)            html += renderModal();
+  if (state.screen === "category")     html += renderCategory();
+  if (state.screen === "setup")        html += renderSetup();
+  if (state.screen === "loading")      html += renderLoading();
+  if (state.screen === "results")      html += renderResults();
+  if (state.screen === "error")        html += renderError();
+  if (state.screen === "manual")       html += renderManual();
+  if (state.screen === "setupArtes")   html += renderSetupArtes();
+  if (state.screen === "loadingArtes") html += renderLoadingArtes();
+  if (state.screen === "resultsArtes") html += renderResultsArtes();
+  if (state.screen === "errorArtes")   html += renderErrorArtes();
+  if (state.showModal)                 html += renderModal();
   html += "</div>";
 
   app.innerHTML = html;
   bindEvents();
 
-  if (state.screen === "results") setTimeout(initCharts, 140);
-  if (["setup", "error", "results"].includes(state.screen)) setTimeout(mountTurnstile, 50);
+  if (state.screen === "results")      setTimeout(initCharts, 140);
+  if (state.screen === "resultsArtes") setTimeout(initChartsArtes, 140);
+  if (["setup", "error", "results", "setupArtes", "errorArtes", "resultsArtes"].includes(state.screen)) setTimeout(mountTurnstile, 50);
 }
 
 // ============================================================
@@ -851,6 +1191,37 @@ function renderHeader(subtitleHtml) {
       ${subtitleHtml ? `<p>${subtitleHtml}</p>` : ""}
     </div>
   </div>
+</div>`;
+}
+
+// ============================================================
+// APARTADO DEL BONO CULTURAL (pantalla inicial)
+// ============================================================
+function renderCategory() {
+  return `
+${renderHeader("Elige el apartado del Bono Cultural Joven que quieres optimizar. Cada apartado tiene su propio limite y sus propios productos permitidos.")}
+
+<div class="card">
+  <div class="lbl">${icon("target",{size:15})} Apartado del Bono Cultural</div>
+  <div class="cat-grid">
+    <div class="cat-card" data-cat="fisico">
+      <span class="cat-ic">${icon("gamepad",{size:26})}</span>
+      <strong>Productos culturales físicos</strong>
+      <span class="cat-budget">100 €</span>
+      <p>Videojuegos físicos comprados en FNAC, GAME o El Corte Inglés, revendidos en CEX España.</p>
+    </div>
+    <div class="cat-card" data-cat="artes">
+      <span class="cat-ic">${icon("sparkles",{size:26})}</span>
+      <strong>Artes en vivo, patrimonio y medios de creación artística</strong>
+      <span class="cat-budget">200 €</span>
+      <p>Instrumentos, equipos de creación audiovisual y material artístico con mercado de reventa activo.</p>
+    </div>
+  </div>
+</div>
+
+<div class="info-box" style="margin-top:14px">
+  <strong style="color:var(--purpleL)">${icon("info",{size:15})} Sobre el Bono Cultural Joven</strong><br>
+  El Bono Cultural Joven se divide en apartados independientes con sus propios limites: 100€ para productos culturales fisicos, 200€ para artes en vivo, patrimonio y medios de creacion artistica, y 100€ para consumo digital. Esta app optimiza los dos primeros comprando y revendiendo dentro de sus limites; el consumo digital no aplica a esta estrategia porque no es revendible.
 </div>`;
 }
 
@@ -1353,17 +1724,267 @@ ${state.manualGames.length > 0 ? `
 }
 
 // ============================================================
+// ARTES EN VIVO, PATRIMONIO (200€) — PANTALLAS
+// ============================================================
+function renderSetupArtes() {
+  return `
+${renderHeader("Artes en vivo, patrimonio y medios de creación artística — presupuesto fijo de 200€.")}
+
+<div class="card">
+  <div class="lbl">${icon("wallet",{size:15})} Presupuesto del apartado (€)</div>
+  <input type="number" value="200" disabled style="opacity:.7">
+  <div style="margin-top:6px;font-size:.8rem;color:var(--text3)">Limite fijo de este apartado del Bono Cultural, no editable</div>
+</div>
+
+<div class="card">
+  <div class="lbl">${icon("target",{size:15})} Posibilidades a generar</div>
+  <div class="poss-btns">
+    ${[1,2,3,4,5].map(n=>`<div class="poss-btn ${state.artesPossibilities===n?"active":""}" data-poss-artes="${n}">${n}</div>`).join("")}
+  </div>
+  <div style="margin-top:8px;font-size:.8rem;color:var(--text3)">Combinaciones distintas que quieres comparar</div>
+</div>
+
+<div class="card">
+  <div class="lbl">${icon("checkCircle",{size:15})} Verificacion</div>
+  <div id="turnstile-slot" style="display:flex;justify-content:center;min-height:65px;align-items:center"></div>
+  <div style="margin-top:2px;font-size:.78rem;color:var(--text3)">Confirma que no eres un robot para poder analizar productos</div>
+</div>
+
+<div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap">
+  <button class="btn btn-primary" id="btn-analyze-artes" data-needs-turnstile ${state.turnstileToken?"":"disabled"} style="flex:1;min-width:200px">
+    ${icon("search",{size:16})} Analizar productos en tiempo real
+  </button>
+  <button class="btn btn-secondary" id="btn-back-artes">
+    ${icon("arrowLeft",{size:16})} Volver
+  </button>
+</div>
+
+<div class="info-box" style="margin-top:14px">
+  <strong style="color:var(--purpleL)">${icon("info",{size:15})} Como funciona</strong><br>
+  La IA busca productos fisicos elegibles en este apartado (instrumentos, equipos de creacion audiovisual, material artistico...) con reventa real en mercados de segunda mano, y calcula las combinaciones que maximizan el porcentaje recuperado dentro de los 200€. Las recomendaciones se diversifican con el tiempo para no repetir siempre los mismos productos: se guarda un historial en este navegador y se penaliza (moderadamente) repetir algo ya recomendado muchas veces, sin sacrificar rentabilidad real.
+</div>`;
+}
+
+function renderLoadingArtes() {
+  const steps = [
+    { id:1, lbl:"Iniciando analisis" },
+    { id:2, lbl:"Buscando productos y valores de reventa" },
+    { id:3, lbl:"Procesando datos" },
+    { id:4, lbl:"Calculando combinaciones y diversificando" },
+  ];
+  return `
+${renderHeader()}
+<div class="card loading-card">
+  <div class="spinner"></div>
+  <h2 style="margin-bottom:8px">Analizando en tiempo real</h2>
+  <p style="color:var(--text2);font-size:.9rem">Consultando tiendas y mercados de reventa con datos actuales...</p>
+  <div class="step-list">
+    ${steps.map(s => `
+      <div class="step-item ${state.artesLoadStep > s.id ? "done" : state.artesLoadStep === s.id ? "active" : ""}">
+        ${state.artesLoadStep > s.id ? icon("checkCircle",{size:14}) : state.artesLoadStep === s.id ? icon("clock",{size:14}) : icon("circle",{size:14})} ${s.lbl}
+      </div>`).join("")}
+  </div>
+</div>`;
+}
+
+function renderErrorArtes() {
+  return `
+${renderHeader()}
+<div class="card error-box">
+  <div class="icon-xl">${icon("alertTriangle",{size:32})}</div>
+  <h2>No se pudo completar el analisis</h2>
+  <p>${esc(state.artesError || "Error desconocido")}</p>
+  <div id="turnstile-slot" style="display:flex;justify-content:center;min-height:65px;align-items:center;margin-bottom:6px"></div>
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+    <button class="btn btn-primary" id="btn-retry-artes" data-needs-turnstile ${state.turnstileToken?"":"disabled"}>${icon("refresh",{size:16})} Reintentar</button>
+    <button class="btn btn-secondary" id="btn-back-artes-params">${icon("arrowLeft",{size:16})} Volver</button>
+  </div>
+</div>`;
+}
+
+function renderTabsArtes(poss) {
+  if (poss.length <= 1) return "";
+  return `<div class="tab-bar">
+    ${poss.map((p,i) => `
+      <div class="tab ${i===state.artesSelPoss?"active":""} ${i===0?"best":""}" data-tab-artes="${i}">
+        ${i===0?icon("star",{size:13}):icon("dot",{size:13})} #${i+1}
+        <span class="sub">${p.cashPct.toFixed(0)}% rec.</span>
+      </div>`).join("")}
+  </div>`;
+}
+
+function renderDashArtes(p) {
+  const m = [
+    { v: fmt(state.artesBudget),       l:"Presupuesto",          c:"c-blue",  ic:"wallet"      },
+    { v: fmt(p.totalFnac),             l:"Gasto total",          c:"",        ic:"store"       },
+    { v: fmt(p.remaining),             l:"Resto presupuesto",    c: p.remaining >= 0 ? "c-green" : "c-red", ic:"wallet" },
+    { v: fmt(p.totalCash),             l:"Recuperado (reventa)", c:"c-green", ic:"banknote"    },
+    { v: (p.cashLoss>0?"-":"+") + fmt(Math.abs(p.cashLoss)), l:"Perdida", c: p.cashLoss>0?"c-red":"c-green", ic:"trendingDown" },
+    { v: p.cashPct.toFixed(1)+"%",     l:"Rentabilidad",         c: p.cashPct>=80?"c-green":p.cashPct>=60?"c-yellow":"c-red", ic:"barChart" },
+    { v: p.uniqueGames,                l:"Productos distintos",  c:"c-blue",  ic:"sparkles"    },
+    { v: p.totalUnits,                 l:"Unidades totales",     c:"",        ic:"package"     },
+    { v: p.diversification.toFixed(0)+"%", l:"Diversificacion",  c: p.diversification>=80?"c-green":"c-yellow", ic:"target" },
+  ];
+  return `<div class="metrics-grid">${m.map(x=>`
+    <div class="metric">
+      <div class="metric-top"><span class="metric-lbl">${x.l}</span>${icon(x.ic,{size:14})}</div>
+      <div class="metric-val ${x.c}">${x.v}</div>
+    </div>`).join("")}</div>`;
+}
+
+function renderTableArtes(items) {
+  const history = loadArtesHistory();
+  const rows = [...items].sort((a, b) => b.cash_pct - a.cash_pct);
+
+  if (!rows.length) return `<div style="text-align:center;padding:28px;color:var(--text3)">Ningun producto en esta combinacion</div>`;
+
+  const thead = `<thead><tr>
+    <th></th><th>Producto</th><th>Categoria</th><th>Marca</th><th>Uds</th><th>Precio compra</th><th>Disponibilidad</th><th>Valor reventa</th><th>Perdida</th><th>% Rec.</th><th>Riesgo</th><th>Historial</th><th>Links</th>
+  </tr></thead>`;
+
+  const tbody = `<tbody>${rows.map(g => {
+    const rb = retBadge(g.cash_pct);
+    const risk = g.risk || riskOf(g);
+    const avail = String(g.fnac_availability || "");
+    const availCls = avail.toLowerCase().includes("pocas") ? "by" : avail.toLowerCase().includes("disponible") ? "bg" : "br";
+    const key = normalizeArtesKey(g.name);
+    const seenCount = (history[key] && history[key].count) || 0;
+    return `<tr>
+      <td>${g.image_url ? `<img src="${esc(g.image_url)}" class="img-thumb" onerror="this.style.display='none'"><span class="img-ph" style="display:none">${platformIcon()}</span>` : `<div class="img-ph">${platformIcon()}</div>`}</td>
+      <td style="max-width:200px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(g.name)}">${esc(g.name)}</td>
+      <td><span class="badge bp">${esc(g.platform)}</span></td>
+      <td style="color:var(--text2)">${esc(g.brand || "-")}</td>
+      <td style="text-align:center">${g.qty}</td>
+      <td>${fmt(g.fnac_price)}</td>
+      <td><span class="badge ${availCls}">${esc(avail || "Desconocida")}</span></td>
+      <td style="color:var(--green)">${fmt(g.cex_cash_price)}</td>
+      <td style="color:var(--red)">-${fmt(g.cash_loss)}</td>
+      <td><span class="badge ${rb.cls}">${rb.ic ? icon(rb.ic,{size:11}) : ""}${rb.label} (${g.cash_pct.toFixed(0)}%)</span></td>
+      <td><span class="badge ${risk.cls}">${risk.label}</span></td>
+      <td>${seenCount > 1 ? `<span class="badge by">Recomendado ×${seenCount}</span>` : `<span class="badge bg">Nuevo</span>`}</td>
+      <td style="white-space:nowrap">
+        ${g.fnac_url ? `<a href="${esc(g.fnac_url)}" target="_blank" class="link-a">Comprar ${icon("externalLink",{size:12})}</a> ` : ""}
+        ${g.cex_url  ? `<a href="${esc(g.cex_url)}"  target="_blank" class="link-a p">Reventa ${icon("externalLink",{size:12})}</a>` : ""}
+      </td>
+    </tr>`;
+  }).join("")}</tbody>`;
+
+  return `<table>${thead}${tbody}</table>`;
+}
+
+function renderChartSectionArtes() {
+  const multi = (state.artesData?.possibilities?.length || 0) > 1;
+  return `
+<div class="card">
+  <div class="sec-title">${icon("barChart",{size:18})} Analisis visual</div>
+  <div class="charts-grid">
+    <div class="chart-card"><h3>Compra vs reventa por producto</h3><canvas id="ch-cmp-artes"></canvas></div>
+    <div class="chart-card"><h3>Distribucion por categoria</h3><canvas id="ch-cat-artes"></canvas></div>
+    <div class="chart-card"><h3>% Recuperado por producto</h3><canvas id="ch-ret-artes"></canvas></div>
+    ${multi ? `<div class="chart-card"><h3>Comparacion entre posibilidades</h3><canvas id="ch-poss-artes"></canvas></div>` : ""}
+  </div>
+</div>`;
+}
+
+function renderChecklistArtes() {
+  const items = [
+    "El producto sigue disponible en la tienda",
+    "El precio de compra no ha cambiado",
+    "El valor de reventa estimado sigue vigente",
+    "El modelo y la marca coinciden exactamente",
+    "El estado (nuevo/como nuevo) coincide con lo verificado",
+    "No comprar si el precio ha cambiado relevantemente",
+    "Verificar que el producto es elegible para el Bono Cultural",
+    "Comprobar la demanda real en el mercado de reventa antes de comprar",
+  ];
+  return `
+<div class="card">
+  <div class="sec-title">${icon("checkCircle",{size:18})} Checklist antes de comprar</div>
+  <div class="checklist-grid">${items.map(i=>`<div class="check-item">${icon("square",{size:15})}${esc(i)}</div>`).join("")}</div>
+</div>`;
+}
+
+function renderWarningArtes() {
+  return `
+<div class="warn-box">
+  <h3>${icon("alertTriangle",{size:16})} Aviso importante</h3>
+  <p>Este analisis se ha elaborado con informacion disponible en el momento de la consulta. Los precios de compra y los valores de reventa en mercados de segunda mano pueden cambiar en cualquier momento. Verifica siempre la elegibilidad del producto para el Bono Cultural y los datos actuales antes de realizar cualquier compra.</p>
+</div>`;
+}
+
+function renderResultsArtes() {
+  const { artesData } = state;
+  if (!artesData) return "";
+  const poss = artesData.possibilities[state.artesSelPoss];
+  const ts = state.artesAnalysisTime?.toLocaleString("es-ES", { timeZone:"Europe/Madrid" }) || "-";
+
+  return `
+${renderHeader(`Analisis: ${esc(ts)} (Europe/Madrid) — Artes en vivo, patrimonio y medios de creacion artistica (200€)`)}
+
+${renderTabsArtes(artesData.possibilities)}
+
+<div class="card">
+  <div class="poss-label ${state.artesSelPoss===0?"first":"alt"}">
+    ${state.artesSelPoss===0 ? icon("star",{size:14}) + " #1 Recomendacion principal" : icon("dot",{size:14}) + ` #${state.artesSelPoss+1} Alternativa`}
+    &nbsp;<span style="font-weight:400;color:var(--text2)">— ${esc(poss.label)}</span>
+  </div>
+
+  ${renderDashArtes(poss)}
+  <div class="table-wrap">${renderTableArtes(poss.games)}</div>
+</div>
+
+${renderChartSectionArtes()}
+${renderChecklistArtes()}
+${renderWarningArtes()}
+
+<div class="card" style="text-align:center">
+  <div id="turnstile-slot" style="display:flex;justify-content:center;min-height:65px;align-items:center"></div>
+  <div style="font-size:.78rem;color:var(--text3)">Verificacion necesaria para reanalizar</div>
+</div>
+
+<div class="action-btns">
+  <button class="btn btn-secondary" id="btn-reanalyze-artes" data-needs-turnstile ${state.turnstileToken?"":"disabled"}>${icon("search",{size:16})} Reanalizar todo</button>
+  <button class="btn btn-secondary" id="btn-back-artes-params">${icon("arrowLeft",{size:16})} Modificar parametros</button>
+</div>`;
+}
+
+// ============================================================
 // EVENT BINDING
 // ============================================================
 function bindEvents() {
   const $ = id => document.getElementById(id);
   const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
 
+  // Apartado del Bono Cultural
+  document.querySelectorAll("[data-cat]").forEach(el =>
+    el.addEventListener("click", () => {
+      state.screen = el.dataset.cat === "artes" ? "setupArtes" : "setup";
+      render();
+    })
+  );
+
   // Setup
   on("budget-in", "input", e => { state.budget = parseFloat(e.target.value) || 150; });
   on("store-select", "change", e => { state.store = e.target.value; render(); });
   on("btn-analyze",  "click", analyzeGames);
   on("btn-to-manual","click", () => { state.screen = "manual"; render(); });
+
+  // Setup — Artes en vivo (200€)
+  on("btn-analyze-artes", "click", analyzeArtItems);
+  on("btn-back-artes", "click", () => { state.screen = "category"; render(); });
+  document.querySelectorAll("[data-poss-artes]").forEach(el =>
+    el.addEventListener("click", () => { state.artesPossibilities = +el.dataset.possArtes; render(); })
+  );
+
+  // Error / resultados — Artes en vivo
+  on("btn-retry-artes", "click", analyzeArtItems);
+  on("btn-reanalyze-artes", "click", analyzeArtItems);
+  document.querySelectorAll("#btn-back-artes-params").forEach(el =>
+    el.addEventListener("click", () => { state.screen = "setupArtes"; render(); })
+  );
+  document.querySelectorAll("[data-tab-artes]").forEach(el =>
+    el.addEventListener("click", () => { state.artesSelPoss = +el.dataset.tabArtes; render(); })
+  );
 
   // Strategy pills
   document.querySelectorAll("[data-strategy]").forEach(el =>
