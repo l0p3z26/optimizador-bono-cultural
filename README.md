@@ -14,8 +14,8 @@ Repo: https://github.com/l0p3z26/optimizador-bono-cultural
 
 ## Estado actual (ya desplegado)
 
-- Frontend: https://optimizador-bono-cultural.lopezmorante08.workers.dev
-- Worker proxy: https://bono-cultural-proxy.lopezmorante08.workers.dev
+- Frontend: https://optimizador-bono-cultural.l0p3z26.workers.dev
+- Worker proxy: https://bono-cultural-proxy.l0p3z26.workers.dev
 - Modelo: `gemini-2.5-flash` — es el único modelo de Gemini con búsqueda web
   (`google_search`) gratuita sin tarjeta (500 peticiones/día). Los modelos
   3.x no tienen búsqueda gratuita bajo ningún concepto (requieren facturación).
@@ -84,7 +84,7 @@ cd worker
 
 1. Dashboard de Cloudflare → **Turnstile → Add widget**.
 2. Modo: **Managed**. Dominio: el del frontend
-   (`optimizador-bono-cultural.lopezmorante08.workers.dev`).
+   (`optimizador-bono-cultural.l0p3z26.workers.dev`).
 3. Copia el **Site Key** a `frontend/index.html` (`TURNSTILE_SITE_KEY`).
 4. Copia el **Secret Key** como secret del Worker:
    ```bash

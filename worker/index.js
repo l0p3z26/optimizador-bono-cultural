@@ -4,7 +4,7 @@
 // y hace failover automatico si una key esta agotada.
 // ============================================================
 
-const ALLOWED_ORIGIN = "https://optimizador-bono-cultural.lopezmorante08.workers.dev";
+const ALLOWED_ORIGIN = "https://optimizador-bono-cultural.l0p3z26.workers.dev";
 const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
