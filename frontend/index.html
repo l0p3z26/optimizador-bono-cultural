@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bono Cultural Videojuegos</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bono Cultural">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{--bg:#0d0e1a;--bg2:#12152a;--card:#1a1d35;--card2:#20243f;--border:#2d3158;--purple:#7c3aed;--purpleL:#a78bfa;--blue:#3b82f6;--blueL:#93c5fd;--green:#10b981;--yellow:#f59e0b;--red:#ef4444;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--r:14px;--r-sm:10px;--sh:0 8px 24px -4px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);--sh-glow:0 0 0 1px rgba(124,58,237,.15),0 8px 30px rgba(124,58,237,.15);--ease:cubic-bezier(.4,0,.2,1)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(124,58,237,.16), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 100% 0%, rgba(59,130,246,.12), transparent 55%),
+    var(--bg);
+  background-attachment:fixed;
+  color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;min-height:100vh;
+  font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:rgba(124,58,237,.35);color:#fff}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--purpleL);outline-offset:2px;border-radius:4px}
+.icon{display:inline-block;vertical-align:-3px;flex-shrink:0}
+.app{max-width:1200px;margin:0 auto;padding:24px 16px 48px}
+.header{text-align:center;padding:20px 0 24px}
+.brand{display:inline-flex;align-items:center;gap:14px;text-align:left;max-width:100%}
+.brand-mark{width:48px;height:48px;border-radius:13px;background:linear-gradient(135deg,var(--purple),var(--blue));display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:var(--sh-glow);flex-shrink:0}
+.brand-text{min-width:0}
+.brand-text h1{font-size:1.85rem;font-weight:800;letter-spacing:-.02em;background:linear-gradient(135deg,var(--purpleL),var(--blueL));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.15}
+.brand-text p{color:var(--text2);font-size:.87rem;margin-top:4px;line-height:1.5}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px;box-shadow:var(--sh);margin-top:14px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,transparent,rgba(124,58,237,.55),transparent);pointer-events:none}
+.lbl{font-size:.75rem;color:var(--text2);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.lbl .icon{color:var(--purpleL)}
+input[type=number],input[type=text],select{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);padding:11px 14px;font-size:.95rem;width:100%;outline:none;transition:.18s var(--ease);font-family:inherit}
+input:focus,select:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(124,58,237,.18)}
+select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:var(--r-sm);font-size:.92rem;font-weight:600;cursor:pointer;border:none;transition:.18s var(--ease);text-decoration:none;font-family:inherit}
+.btn-primary{background:linear-gradient(135deg,var(--purple),var(--blue));color:#fff;box-shadow:0 4px 16px rgba(124,58,237,.35)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,58,237,.45)}
+.btn-primary:active{transform:translateY(0) scale(.98)}
+.btn-secondary{background:var(--card2);border:1px solid var(--border);color:var(--text)}
+.btn-secondary:hover{border-color:var(--purple);color:var(--purpleL);background:rgba(124,58,237,.08)}
+.btn-secondary:active{transform:scale(.98)}
+.btn-danger{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.28);color:var(--red)}
+.btn-danger:hover{background:rgba(239,68,68,.2)}
+.btn-sm{padding:7px 14px;font-size:.82rem}
+.strat-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
+.strat-btn{padding:16px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card2);color:var(--text2);cursor:pointer;text-align:center;font-size:.88rem;line-height:1.4;transition:.18s var(--ease)}
+.strat-btn:hover{border-color:rgba(124,58,237,.5);transform:translateY(-1px)}
+.strat-btn.active{border-color:var(--purple);background:rgba(124,58,237,.14);color:var(--purpleL);box-shadow:0 0 0 1px rgba(124,58,237,.3)}
+.strat-btn strong{display:flex;align-items:center;justify-content:center;gap:6px;font-size:1rem;margin-bottom:4px;color:var(--text)}
+.strat-btn.active strong{color:var(--purpleL)}
+.poss-btns{display:flex;gap:8px}
+.poss-btn{width:46px;height:46px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--card2);color:var(--text2);cursor:pointer;font-size:1.1rem;font-weight:700;transition:.18s var(--ease);display:flex;align-items:center;justify-content:center}
+.poss-btn:hover{border-color:rgba(59,130,246,.5)}
+.poss-btn.active{border-color:var(--blue);background:rgba(59,130,246,.14);color:var(--blueL)}
+.tab-bar{display:flex;gap:3px;border-bottom:1px solid var(--border);padding-bottom:0;overflow-x:auto}
+.tab{padding:9px 18px;border-radius:10px 10px 0 0;border:1px solid transparent;background:transparent;color:var(--text2);cursor:pointer;font-size:.85rem;font-weight:600;border-bottom:none;transition:.18s var(--ease);white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--card2);border-color:var(--border);border-bottom-color:var(--card2);color:var(--purpleL)}
+.tab.best{border-top:2px solid var(--green)}
+.tab span.sub{font-size:.7rem;color:var(--text3)}
+.tab.active span.sub{color:var(--text2)}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:18px}
+.metric{background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px;transition:.18s var(--ease)}
+.metric:hover{border-color:rgba(124,58,237,.4);transform:translateY(-1px)}
+.metric-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.metric-top .icon{color:var(--text3)}
+.metric-val{font-size:1.45rem;font-weight:800;margin-bottom:3px;letter-spacing:-.01em}
+.metric-lbl{font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
+.c-green{color:var(--green)}.c-red{color:var(--red)}.c-blue{color:var(--blueL)}.c-yellow{color:var(--yellow)}.c-purple{color:var(--purpleL)}
+.table-wrap{overflow-x:auto;border-radius:var(--r-sm);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.82rem;min-width:1000px}
+th{background:var(--card2);color:var(--text2);font-weight:700;text-align:left;padding:10px 12px;white-space:nowrap;cursor:pointer;border-bottom:1px solid var(--border);user-select:none;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}
+th:hover{color:var(--purpleL)}
+td{padding:10px 12px;border-bottom:1px solid rgba(45,49,88,.4);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr{transition:.12s var(--ease)}
+tr:hover td{background:rgba(124,58,237,.05)}
+tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--purple)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:.73rem;font-weight:700;white-space:nowrap;border:1px solid transparent}
+.bg{background:rgba(16,185,129,.13);color:var(--green);border-color:rgba(16,185,129,.22)}
+.bb{background:rgba(59,130,246,.13);color:var(--blueL);border-color:rgba(59,130,246,.22)}
+.by{background:rgba(245,158,11,.13);color:var(--yellow);border-color:rgba(245,158,11,.22)}
+.br{background:rgba(239,68,68,.13);color:var(--red);border-color:rgba(239,68,68,.22)}
+.bp{background:rgba(124,58,237,.13);color:var(--purpleL);border-color:rgba(124,58,237,.22)}
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:14px}
+.chart-card{background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:16px}
+.chart-card h3{font-size:.82rem;color:var(--text2);margin-bottom:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.loading-card{text-align:center;padding:56px 24px}
+.spinner{width:52px;height:52px;border-radius:50%;background:conic-gradient(from 0deg,var(--purple),var(--blue),transparent 65%);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 5px));mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 5px));animation:spin 1s linear infinite;margin:0 auto 20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+.step-list{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+.step-item{display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:var(--r-sm);font-size:.82rem;border:1px solid var(--border);background:var(--card2);color:var(--text3)}
+.step-item.done{border-color:var(--green);color:var(--green);background:rgba(16,185,129,.08)}
+.step-item.active{border-color:var(--purple);color:var(--purpleL);background:rgba(124,58,237,.08);animation:pulse 1.6s ease-in-out infinite}
+.error-box{text-align:center;padding:48px 24px}
+.error-box .icon-xl{width:72px;height:72px;border-radius:50%;background:rgba(239,68,68,.12);color:var(--red);display:flex;align-items:center;justify-content:center;margin:0 auto}
+.error-box h2{color:var(--red);font-size:1.3rem;margin:16px 0 8px}
+.error-box p{color:var(--text2);margin-bottom:18px;max-width:520px;margin-left:auto;margin-right:auto;font-size:.9rem;line-height:1.6;white-space:pre-wrap}
+.filters-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.filters-bar select{flex:1;min-width:120px;width:auto}
+.search-wrap{position:relative;flex:2;min-width:150px}
+.search-wrap input{width:100%;padding-left:38px}
+.search-ic{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;display:flex}
+.sell-box{background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:18px;margin-top:6px}
+.sell-rec{display:flex;align-items:flex-start;gap:14px;padding:14px;border-radius:var(--r-sm);margin-bottom:14px}
+.sell-rec.now{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25)}
+.sell-rec.wait{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25)}
+.sell-rec.no{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25)}
+.rec-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sell-rec.now .rec-icon{background:rgba(16,185,129,.15);color:var(--green)}
+.sell-rec.wait .rec-icon{background:rgba(245,158,11,.15);color:var(--yellow)}
+.sell-rec.no .rec-icon{background:rgba(239,68,68,.15);color:var(--red)}
+.risk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:12px}
+.risk-item{background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px}
+.risk-item h4{font-size:.75rem;color:var(--text2);margin-bottom:6px;font-weight:700;display:flex;align-items:center;gap:6px}
+.risk-item strong{font-size:.9rem}
+.risk-bar{height:5px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:6px}
+.risk-fill-low{height:100%;width:20%;border-radius:3px;background:var(--green)}
+.risk-fill-med{height:100%;width:60%;border-radius:3px;background:var(--yellow)}
+.risk-fill-high{height:100%;width:92%;border-radius:3px;background:var(--red)}
+.warn-box{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.18);border-radius:var(--r-sm);padding:16px;margin-top:14px}
+.warn-box h3{color:var(--yellow);font-size:.88rem;margin-bottom:7px;font-weight:700;display:flex;align-items:center;gap:7px}
+.warn-box p{color:var(--text2);font-size:.82rem;line-height:1.6}
+.action-btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.poss-label{display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:var(--r-sm);font-size:.78rem;font-weight:700;margin-bottom:14px}
+.poss-label.first{background:rgba(16,185,129,.13);color:var(--green);border:1px solid rgba(16,185,129,.25)}
+.poss-label.alt{background:rgba(59,130,246,.1);color:var(--blueL);border:1px solid rgba(59,130,246,.2)}
+.sec-title{font-size:1.05rem;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:9px;letter-spacing:-.01em}
+.sec-title .icon{color:var(--purpleL)}
+.img-thumb{width:44px;height:44px;object-fit:cover;border-radius:var(--r-sm);background:var(--card2)}
+.img-ph{width:44px;height:44px;border-radius:var(--r-sm);background:var(--card2);display:flex;align-items:center;justify-content:center;color:var(--text3);flex-shrink:0}
+.link-a{color:var(--blue);text-decoration:none;font-size:.78rem;display:inline-flex;align-items:center;gap:3px}
+.link-a:hover{color:var(--blueL)}
+.link-a.p{color:var(--purpleL)}
+.link-a.p:hover{color:#c4b5fd}
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:var(--r);max-width:680px;width:100%;max-height:80vh;overflow-y:auto;padding:24px;box-shadow:var(--sh);animation:modalIn .16s var(--ease)}
+@keyframes modalIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+.modal h2{margin-bottom:14px;font-size:1.15rem;display:flex;align-items:center;gap:9px}
+.keep-row{display:flex;align-items:center;justify-content:space-between;padding:11px;border-bottom:1px solid var(--border);gap:10px}
+.keep-btns{display:flex;gap:6px;flex-shrink:0}
+.kbtn{padding:4px 11px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-size:.78rem;transition:.18s var(--ease)}
+.kbtn.keep{border-color:var(--green);background:rgba(16,185,129,.1);color:var(--green)}
+.kbtn.remove{border-color:var(--red);background:rgba(239,68,68,.1);color:var(--red)}
+.kbtn.replace{border-color:var(--yellow);background:rgba(245,158,11,.1);color:var(--yellow)}
+.manual-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.manual-game-card{background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px;margin-bottom:10px;position:relative}
+.checklist-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.check-item{display:flex;align-items:flex-start;gap:9px;color:var(--text2);font-size:.83rem}
+.check-item .icon{color:var(--purpleL);margin-top:1px}
+.info-box{background:rgba(124,58,237,.05);border:1px solid rgba(124,58,237,.15);border-radius:var(--r-sm);padding:14px;font-size:.84rem;color:var(--text2);line-height:1.6}
+.info-box strong{display:inline-flex;align-items:center;gap:7px}
+@media(max-width:680px){.metrics-grid{grid-template-columns:1fr 1fr}.charts-grid{grid-template-columns:1fr}.checklist-grid{grid-template-columns:1fr}.manual-grid{grid-template-columns:1fr}.strat-btns{grid-template-columns:1fr}}
+@media(max-width:480px){.brand{flex-direction:column;text-align:center}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const WORKER_URL = "PONER_URL_DEL_WORKER";
+
+// ============================================================
+// ICONS — set SVG inline (sin librerias externas)
+// ============================================================
+const ICONS = {
+  gamepad: '<rect x="2" y="7" width="20" height="11" rx="5.5"/><path d="M7 10v4M5 12h4"/><circle cx="15.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="18" cy="13" r="1" fill="currentColor" stroke="none"/>',
+  wallet: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="17" cy="14" r="1.3" fill="currentColor" stroke="none"/>',
+  store: '<rect x="3" y="9" width="18" height="12" rx="1"/><path d="M3 9l2-5h14l2 5"/><rect x="10" y="14" width="4" height="7"/>',
+  barChart: '<rect x="6" y="12" width="3" height="8" rx="0.5"/><rect x="11" y="8" width="3" height="12" rx="0.5"/><rect x="16" y="4" width="3" height="16" rx="0.5"/>',
+  banknote: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><line x1="6" y1="9" x2="6" y2="9.01"/><line x1="18" y1="15" x2="18" y2="15.01"/>',
+  ticket: '<path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><line x1="13" y1="7.5" x2="13" y2="9" stroke-dasharray="1.5 1.5"/><line x1="13" y1="15" x2="13" y2="16.5" stroke-dasharray="1.5 1.5"/>',
+  scale: '<line x1="12" y1="3" x2="12" y2="19"/><line x1="5" y1="7" x2="19" y2="7"/><polyline points="4,7 7,13 10,7"/><polyline points="14,7 17,13 20,7"/><line x1="8" y1="19" x2="16" y2="19"/>',
+  alertTriangle: '<path d="M12 3L22 21H2Z"/><line x1="12" y1="9" x2="12" y2="14"/><line x1="12" y1="17" x2="12" y2="17.01"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>',
+  search: '<circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15.5" y2="15.5"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  checkCircle: '<circle cx="12" cy="12" r="9"/><polyline points="8,12.5 11,15.5 16,9"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><polyline points="12,7 12,12 16,14"/>',
+  circle: '<circle cx="12" cy="12" r="9"/>',
+  dot: '<circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/>',
+  refresh: '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+  arrowLeft: '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12,19 5,12 12,5"/>',
+  fileText: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/>',
+  star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+  externalLink: '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/>',
+  lightbulb: '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/>',
+  trendingDown: '<polyline points="23,18 13.5,8.5 8.5,13.5 1,6"/><polyline points="17,18 23,18 23,12"/>',
+  package: '<rect x="3" y="7" width="18" height="14" rx="1.5"/><path d="M3 7l9-4 9 4"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/>',
+  clipboard: '<rect x="6" y="4" width="12" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/>',
+  xCircle: '<circle cx="12" cy="12" r="9"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/>',
+  plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  calculator: '<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10.01"/><line x1="12" y1="10" x2="12" y2="10.01"/><line x1="16" y1="10" x2="16" y2="10.01"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="12" y1="18" x2="12" y2="18.01"/><line x1="16" y1="18" x2="16" y2="18.01"/>',
+  sparkles: '<path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/><path d="M19 15l.6 1.7.3.3 1.7.6-1.7.6-.3.3-.6 1.7-.6-1.7-.3-.3-1.7-.6 1.7-.6.3-.3z"/>',
+  info: '<circle cx="12" cy="12" r="9"/><line x1="12" y1="16" x2="12" y2="11"/><line x1="12" y1="8" x2="12" y2="8.01"/>',
+  square: '<rect x="4" y="4" width="16" height="16" rx="3"/>',
+};
+
+function icon(name, opts) {
+  opts = opts || {};
+  const size = opts.size || 18;
+  const cls = opts.cls || "";
+  const sw = opts.sw || 2;
+  const body = ICONS[name] || "";
+  return '<svg class="icon' + (cls ? " " + cls : "") + '" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + sw + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + body + '</svg>';
+}
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  screen: "setup",   // setup | loading | results | error | manual
+  budget: 100,
+  strategy: "cash",  // cash | voucher | balanced
+  possibilities: 3,
+  data: null,        // { games, possibilities, analysis_datetime, ... }
+  selPoss: 0,
+  loadStep: 0,
+  error: null,
+  analysisTime: null,
+  searchQ: "",
+  filterPlatform: "all",
+  sortField: "cash_pct",
+  sortDir: "desc",
+  showModal: false,
+  replaceStatus: {},
+  manualGames: [],
+  store: "fnac",   // fnac | game | corteingles
+};
+
+const chartInst = {};
+
+// ============================================================
+// UTILS
+// ============================================================
+const fmt = n => (typeof n === "number" && !isNaN(n)) ? n.toFixed(2).replace(".", ",") + "\u20ac" : "-";
+const fmtPct = n => (typeof n === "number" && !isNaN(n)) ? (n >= 0 ? "+" : "") + n.toFixed(1) + "%" : "-";
+const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+function riskOf(g) {
+  const r = g.fnac_price > 0 ? g.cex_cash_price / g.fnac_price : 0;
+  if (r >= 0.85) return { level:"low",  label:"Bajo",  cls:"bg" };
+  if (r >= 0.65) return { level:"med",  label:"Medio", cls:"by" };
+  return                 { level:"high", label:"Alto",  cls:"br" };
+}
+
+function retBadge(pct) {
+  if (pct >= 100) return { cls:"bg", label:"Ganancia", ic:"sparkles" };
+  if (pct >= 80)  return { cls:"bb", label:"Excelente", ic:null };
+  if (pct >= 60)  return { cls:"by", label:"Aceptable", ic:null };
+  return                 { cls:"br", label:"Evitar", ic:null };
+}
+
+function platformIcon() {
+  return icon("gamepad", { size: 20 });
+}
+
+function storeInfo() {
+  const S = {
+    fnac:        { name:"FNAC",             short:"FNAC",  domain:"fnac.es",          searchHint:"fnac.es" },
+    game:        { name:"GAME",             short:"GAME",  domain:"game.es",          searchHint:"game.es o tiendagame.es" },
+    corteingles: { name:"El Corte Ingles",  short:"ECI",   domain:"elcorteingles.es", searchHint:"elcorteingles.es (videojuegos)" },
+  };
+  return S[state.store] || S.fnac;
+}
+
+// ============================================================
+// GEMINI API (via Cloudflare Worker proxy)
+// ============================================================
+async function callGemini(systemPrompt, prompt) {
+  const res = await fetch(WORKER_URL + "/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt, systemPrompt })
+  });
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error("Error de conexion con el servidor (" + res.status + "): " + txt.slice(0, 200));
+  }
+
+  const data = await res.json();
+  return data.text || "";
+}
+
+function extractJSON(text) {
+  const t = text.trim();
+  try { return JSON.parse(t); } catch {}
+  const m = t.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (m) { try { return JSON.parse(m[1].trim()); } catch {} }
+  const s = t.indexOf("{"), e = t.lastIndexOf("}");
+  if (s !== -1 && e > s) { try { return JSON.parse(t.slice(s, e + 1)); } catch {} }
+  return null;
+}
+
+// ============================================================
+// VALIDATION + NORMALIZATION
+// ============================================================
+function normalizeGames(raw, budget) {
+  return (raw || [])
+    .filter(g =>
+      g.name && String(g.name).trim() &&
+      +g.fnac_price > 0 && +g.cex_cash_price > 0 && +g.cex_voucher_price > 0 &&
+      +g.fnac_price <= budget &&
+      String(g.fnac_availability || "").toLowerCase() !== "no disponible"
+    )
+    .map(g => {
+      const fp = +g.fnac_price, cc = +g.cex_cash_price, cv = +g.cex_voucher_price;
+      return {
+        ...g,
+        name: String(g.name).trim(),
+        platform: String(g.platform || "Desconocida"),
+        fnac_price: fp,
+        cex_cash_price: cc,
+        cex_voucher_price: cv,
+        cash_pct: fp > 0 ? (cc / fp) * 100 : 0,
+        voucher_pct: fp > 0 ? (cv / fp) * 100 : 0,
+        cash_loss: fp - cc,
+        voucher_loss: fp - cv,
+        risk: riskOf({ fnac_price: fp, cex_cash_price: cc }),
+        qty: g.qty || 1,
+      };
+    });
+}
+
+// ============================================================
+// OPTIMIZATION — greedy knapsack
+// ============================================================
+function scoreFor(g, strategy) {
+  if (strategy === "cash")    return g.cex_cash_price;
+  if (strategy === "voucher") return g.cex_voucher_price;
+  return (g.cex_cash_price + g.cex_voucher_price) / 2;
+}
+
+function runGreedy(pool, budget, scoreFn) {
+  const sorted = pool
+    .map(g => ({ ...g, _d: scoreFn(g) / g.fnac_price }))
+    .sort((a, b) => b._d - a._d);
+
+  let rem = budget;
+  const out = [];
+  const used = new Set();
+
+  for (const g of sorted) {
+    if (!used.has(g.name) && rem >= g.fnac_price) {
+      out.push({ ...g, qty: 1 });
+      rem -= g.fnac_price;
+      used.add(g.name);
+    }
+  }
+  // Try to use remaining budget with a 2nd unit
+  for (const g of sorted) {
+    if (rem < 5) break;
+    if (rem >= g.fnac_price) {
+      const ex = out.find(x => x.name === g.name);
+      if (ex && ex.qty < 2) {
+        ex.qty++;
+        rem -= g.fnac_price;
+      }
+    }
+  }
+  return out;
+}
+
+function calcMetrics(games, budget) {
+  const totalFnac    = games.reduce((s, g) => s + g.fnac_price * g.qty, 0);
+  const totalCash    = games.reduce((s, g) => s + g.cex_cash_price * g.qty, 0);
+  const totalVoucher = games.reduce((s, g) => s + g.cex_voucher_price * g.qty, 0);
+  const totalUnits   = games.reduce((s, g) => s + g.qty, 0);
+  const uniqueGames  = new Set(games.map(g => g.name)).size;
+  const diversification   = totalUnits > 0 ? (uniqueGames / totalUnits) * 100 : 0;
+  const concentrationRisk = totalUnits > 1 ? ((totalUnits - uniqueGames) / totalUnits) * 100 : 0;
+  return {
+    games, totalFnac, totalCash, totalVoucher,
+    cashLoss: totalFnac - totalCash,
+    voucherLoss: totalFnac - totalVoucher,
+    cashPct: totalFnac > 0 ? (totalCash / totalFnac) * 100 : 0,
+    voucherPct: totalFnac > 0 ? (totalVoucher / totalFnac) * 100 : 0,
+    remaining: budget - totalFnac,
+    uniqueGames, totalUnits, diversification, concentrationRisk,
+  };
+}
+
+function generatePossibilities(pool, budget, strategy, count) {
+  const strategies = [
+    { label: "Maxima recuperacion en efectivo",      fn: g => g.cex_cash_price },
+    { label: "Maxima recuperacion en vale CEX",      fn: g => g.cex_voucher_price },
+    { label: "Equilibrado efectivo + vale",          fn: g => (g.cex_cash_price + g.cex_voucher_price) / 2 },
+    { label: "Maxima diversificacion de cartera",    fn: g => (g.cex_cash_price / g.fnac_price) * 40 + (1 / g.fnac_price) * 200 },
+    { label: "Minima perdida porcentual",            fn: g => (g.cex_cash_price / g.fnac_price) * 100 - g.fnac_price * 0.1 },
+  ];
+
+  if (strategy === "voucher") [strategies[0], strategies[1]] = [strategies[1], strategies[0]];
+  else if (strategy === "balanced") [strategies[0], strategies[2]] = [strategies[2], strategies[0]];
+
+  const results = [];
+  const seen = new Set();
+
+  for (let i = 0; i < Math.min(count, strategies.length); i++) {
+    const sf = strategies[i];
+
+    // For positions 2+, try excluding the most expensive games from pos 0 to force variety
+    let usePool = pool;
+    if (i >= 2 && results[0] && pool.length > 4) {
+      const top = [...results[0].games].sort((a, b) => b.fnac_price - a.fnac_price).slice(0, Math.ceil(pool.length / 3)).map(g => g.name);
+      usePool = pool.filter(g => !top.includes(g.name));
+      if (usePool.length < 3) usePool = pool;
+    }
+
+    let combo = runGreedy(usePool, budget, sf.fn);
+    const key = combo.map(g => g.name + g.qty).sort().join("|");
+
+    if (seen.has(key) && combo.length > 0) {
+      const altPool = pool.filter(g => !combo.slice(0, 2).find(x => x.name === g.name));
+      const alt = runGreedy(altPool.length >= 2 ? altPool : pool, budget, sf.fn);
+      const altKey = alt.map(g => g.name + g.qty).sort().join("|");
+      if (!seen.has(altKey)) { combo = alt; seen.add(altKey); }
+      else seen.add(key);
+    } else {
+      seen.add(key);
+    }
+
+    results.push({ ...calcMetrics(combo, budget), label: sf.label, rank: i + 1 });
+  }
+
+  // Sort by cash recovery descending
+  results.sort((a, b) => b.cashPct - a.cashPct);
+  return results;
+}
+
+// ============================================================
+// ANALYSIS ENTRY POINT
+// ============================================================
+async function analyzeGames() {
+  state.screen = "loading";
+  state.loadStep = 1;
+  state.error = null;
+  render();
+
+  const si = storeInfo();
+
+  const sysPrompt = `Eres un buscador de precios de videojuegos fisicos en Espana especializado en ${si.searchHint} y es.webuy.com (CEX Espana).
+CRITICO: Responde UNICAMENTE con un objeto JSON valido, sin texto adicional, sin markdown, sin explicaciones.
+Si no puedes verificar un precio oficial en ambas fuentes, excluye ese juego.
+Nunca inventes precios, disponibilidad ni URLs.
+Si no puedes buscar en internet, responde con: {"error":"sin_acceso_web","games":[]}`;
+
+  const now = new Date();
+  const nowStr = now.toLocaleString("es-ES", { timeZone: "Europe/Madrid" });
+  const isoNow = now.toISOString().slice(0, 19);
+
+  const userMsg = `Fecha y hora actual: ${nowStr}. Presupuesto maximo por unidad: ${state.budget}\u20ac. Tienda de compra: ${si.name} (${si.searchHint}).
+
+Busca en ${si.searchHint} videojuegos fisicos (formato fisico, no digital) con precio de venta <= ${state.budget}\u20ac, disponibles para compra.
+Para cada juego encontrado, busca en es.webuy.com cuanto paga CEX Espana en efectivo (cash) y en vale (voucher).
+Incluye solo juegos con datos completos y verificados en AMBAS fuentes oficiales.
+Busca al menos 8 juegos distintos si es posible. Incluye PS5, PS4, Nintendo Switch, Xbox para diversificacion.
+
+Devuelve UNICAMENTE este JSON exacto (sin nada mas, ni antes ni despues):
+{"analysis_datetime":"${isoNow}","timezone":"Europe/Madrid","sources_used":["${si.name}","CEX Espana"],"games":[{"name":"","platform":"PS5","fnac_price":0,"fnac_availability":"Disponible","fnac_url":"","image_url":"","cex_cash_price":0,"cex_voucher_price":0,"cex_url":"","verification_status":"verified","notes":""}],"excluded_games":[],"errors":[]}`;
+
+  try {
+    state.loadStep = 2;
+    render();
+
+    const rawText = await callGemini(sysPrompt, userMsg);
+
+    state.loadStep = 3;
+    render();
+
+    const json = extractJSON(rawText);
+
+    if (!json) {
+      throw new Error(
+        "No se han podido verificar datos oficiales en tiempo real.\n" +
+        "El analisis no puede generarse sin precios actuales confirmados de " + si.name + " y CEX Espana.\n\n" +
+        "Causa probable: busqueda web no disponible o error al acceder a las fuentes oficiales.\n" +
+        "Prueba el modo manual para introducir precios que hayas verificado tu mismo."
+      );
+    }
+
+    if (json.error === "sin_acceso_web" || !Array.isArray(json.games)) {
+      throw new Error(
+        "La busqueda web en tiempo real no esta disponible en este momento.\n" +
+        "No se han podido consultar " + si.name + " ni CEX Espana.\n\n" +
+        "Usa el modo manual para introducir precios verificados por ti mismo."
+      );
+    }
+
+    const valid = normalizeGames(json.games, state.budget);
+
+    if (valid.length === 0) {
+      throw new Error(
+        "No se encontraron juegos verificados con los datos recibidos.\n" +
+        "Posibles causas: presupuesto insuficiente, juegos sin precio en CEX, o datos incompletos.\n\n" +
+        "Prueba aumentando el presupuesto o usa el modo manual."
+      );
+    }
+
+    state.loadStep = 4;
+    render();
+
+    const poss = generatePossibilities(valid, state.budget, state.strategy, state.possibilities);
+
+    state.data = { ...json, games: valid, possibilities: poss };
+    state.analysisTime = now;
+    state.selPoss = 0;
+    state.screen = "results";
+    render();
+    setTimeout(initCharts, 160);
+
+  } catch (err) {
+    state.error = err.message || String(err);
+    state.screen = "error";
+    render();
+  }
+}
+
+// ============================================================
+// SELL ADVICE
+// ============================================================
+function sellAdvice(poss) {
+  if (!poss?.games?.length) return null;
+  const g = poss.games;
+  const lowStock  = g.filter(x => String(x.fnac_availability).toLowerCase().includes("pocas")).length;
+  const lowReturn = g.filter(x => x.cash_pct < 55).length;
+  const hiReturn  = g.filter(x => x.cash_pct >= 85).length;
+  const sn = storeInfo().name;
+
+  let rec = "now", conf = "Medio", reason = "";
+  if (lowStock >= 2) {
+    rec = "now"; conf = "Alto";
+    reason = `${lowStock} juego(s) con pocas unidades en ${sn}. Conviene actuar pronto.`;
+  } else if (hiReturn >= 2) {
+    rec = "now"; conf = "Medio";
+    reason = "Varios juegos con alta rentabilidad. Buen momento para ejecutar la estrategia.";
+  } else if (lowReturn > g.length / 2) {
+    rec = "wait"; conf = "Bajo";
+    reason = "Varios juegos con baja recuperacion. Considera esperar a que CEX mejore sus precios.";
+  } else {
+    rec = "now"; conf = "Medio";
+    reason = "Los precios actuales son razonables para ejecutar la estrategia.";
+  }
+
+  return {
+    rec, conf, reason,
+    riskPrice: lowReturn > 0 ? "Alto" : "Medio",
+    riskStock: lowStock > 0 ? "Alto" : "Bajo",
+    riskCex:   g.some(x => x.cash_pct < 50) ? "Alto" : "Medio",
+  };
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+function destroyCharts() {
+  Object.values(chartInst).forEach(c => { try { c.destroy(); } catch {} });
+  Object.keys(chartInst).forEach(k => delete chartInst[k]);
+}
+
+function initCharts() {
+  destroyCharts();
+  const poss = state.data?.possibilities?.[state.selPoss];
+  if (!poss?.games?.length) return;
+
+  const g = poss.games;
+  const labels = g.map(x => x.name.length > 13 ? x.name.slice(0, 13) + "\u2026" : x.name);
+
+  const base = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: { legend: { labels: { color: "#94a3b8", font: { size: 10 } } } },
+    scales: {
+      x: { ticks: { color: "#64748b", font: { size: 9 } }, grid: { color: "#1a1d35" } },
+      y: { ticks: { color: "#64748b", font: { size: 9 } }, grid: { color: "#1a1d35" } }
+    }
+  };
+
+  const c1 = document.getElementById("ch-cmp");
+  if (c1) chartInst.cmp = new Chart(c1, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: storeInfo().name, data: g.map(x => x.fnac_price),         backgroundColor: "#3b82f6" },
+        { label: "CEX Efectivo",   data: g.map(x => x.cex_cash_price),    backgroundColor: "#10b981" },
+        { label: "CEX Vale",       data: g.map(x => x.cex_voucher_price), backgroundColor: "#a78bfa" },
+      ]
+    },
+    options: base
+  });
+
+  const c2 = document.getElementById("ch-plat");
+  if (c2) {
+    const plats = {};
+    g.forEach(x => { plats[x.platform] = (plats[x.platform] || 0) + x.fnac_price * x.qty; });
+    chartInst.plat = new Chart(c2, {
+      type: "doughnut",
+      data: {
+        labels: Object.keys(plats),
+        datasets: [{ data: Object.values(plats), backgroundColor: ["#7c3aed","#3b82f6","#10b981","#f59e0b","#ef4444","#ec4899"] }]
+      },
+      options: { responsive: true, plugins: { legend: { labels: { color: "#94a3b8", font: { size: 10 } } } } }
+    });
+  }
+
+  const c3 = document.getElementById("ch-ret");
+  if (c3) chartInst.ret = new Chart(c3, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        label: "% Recuperado (ef.)",
+        data: g.map(x => +x.cash_pct.toFixed(1)),
+        backgroundColor: g.map(x => x.cash_pct >= 100 ? "#10b981" : x.cash_pct >= 80 ? "#3b82f6" : x.cash_pct >= 60 ? "#f59e0b" : "#ef4444")
+      }]
+    },
+    options: {
+      ...base,
+      scales: { ...base.scales, y: { ...base.scales.y, ticks: { ...base.scales.y.ticks, callback: v => v + "%" } } }
+    }
+  });
+
+  const c4 = document.getElementById("ch-poss");
+  if (c4 && state.data.possibilities.length > 1) {
+    const p = state.data.possibilities;
+    chartInst.poss = new Chart(c4, {
+      type: "bar",
+      data: {
+        labels: p.map((_, i) => "#" + (i + 1)),
+        datasets: [
+          { label: "Ef. recuperado",   data: p.map(x => +x.totalCash.toFixed(2)),    backgroundColor: "#10b981" },
+          { label: "Vale recuperado",  data: p.map(x => +x.totalVoucher.toFixed(2)), backgroundColor: "#a78bfa" },
+        ]
+      },
+      options: base
+    });
+  }
+}
+
+// ============================================================
+// PDF EXPORT
+// ============================================================
+function exportPDF() {
+  if (!window.jspdf) { alert("PDF no disponible. Recarga la pagina e intentalo de nuevo."); return; }
+  const poss = state.data?.possibilities?.[state.selPoss];
+  if (!poss) return;
+  const sn = storeInfo().name;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(18);
+  doc.setTextColor(124, 58, 237);
+  doc.text("Bono Cultural \u2014 Analisis " + sn + " \u2192 CEX", 14, 18);
+
+  doc.setFontSize(9);
+  doc.setTextColor(120);
+  doc.text("Generado: " + (state.analysisTime?.toLocaleString("es-ES") || "-") + " (Europe/Madrid)", 14, 25);
+  doc.text("Presupuesto: " + fmt(state.budget) + "  |  Estrategia: " + state.strategy + "  |  Posibilidad #" + (state.selPoss + 1) + ": " + poss.label, 14, 30);
+
+  doc.autoTable({
+    startY: 36,
+    head: [["Metrica", "Valor"]],
+    body: [
+      ["Total gastado " + sn,       fmt(poss.totalFnac)],
+      ["Recuperado efectivo",       fmt(poss.totalCash)],
+      ["Recuperado vale",           fmt(poss.totalVoucher)],
+      ["Perdida efectivo",          fmt(poss.cashLoss)],
+      ["Perdida vale",              fmt(poss.voucherLoss)],
+      ["Rentabilidad ef.",          poss.cashPct.toFixed(1) + "%"],
+      ["Juegos distintos",          poss.uniqueGames],
+      ["Unidades totales",          poss.totalUnits],
+      ["Diversificacion",           poss.diversification.toFixed(0) + "%"],
+    ],
+    styles: { fontSize: 8, cellPadding: 3 },
+    headStyles: { fillColor: [124, 58, 237] },
+    alternateRowStyles: { fillColor: [238, 238, 248] },
+    margin: { left: 14, right: 14 },
+  });
+
+  doc.setFontSize(11);
+  doc.setTextColor(50);
+  doc.text("Juegos recomendados", 14, doc.lastAutoTable.finalY + 10);
+
+  doc.autoTable({
+    startY: doc.lastAutoTable.finalY + 14,
+    head: [["Juego", "Plataforma", "Uds", sn, "CEX Ef.", "CEX Vale", "Rec.%", "Riesgo"]],
+    body: poss.games.map(g => [
+      g.name, g.platform, g.qty, fmt(g.fnac_price),
+      fmt(g.cex_cash_price), fmt(g.cex_voucher_price),
+      g.cash_pct.toFixed(1) + "%", g.risk?.label || "-"
+    ]),
+    styles: { fontSize: 7.5, cellPadding: 2.5 },
+    headStyles: { fillColor: [124, 58, 237] },
+    alternateRowStyles: { fillColor: [238, 238, 248] },
+    margin: { left: 14, right: 14 },
+  });
+
+  const ey = doc.lastAutoTable.finalY + 10;
+  doc.setFontSize(10); doc.setTextColor(50);
+  doc.text("Enlaces oficiales", 14, ey);
+  doc.setFontSize(7.5);
+  poss.games.forEach((g, i) => {
+    const y = ey + 6 + i * 12;
+    if (y > 272) return;
+    doc.setTextColor(80);
+    doc.text(g.name + ":", 14, y);
+    if (g.fnac_url) { doc.setTextColor(0, 80, 200); doc.text(sn + ": " + g.fnac_url.slice(0, 70), 18, y + 4); }
+    if (g.cex_url)  { doc.setTextColor(100, 50, 200); doc.text("CEX:  " + g.cex_url.slice(0, 70), 18, y + 8); }
+  });
+
+  doc.addPage();
+  doc.setFontSize(11); doc.setTextColor(160, 90, 0);
+  doc.text("Aviso importante", 14, 20);
+  doc.setFontSize(8); doc.setTextColor(90);
+  doc.text(
+    "Este analisis se basa en datos oficiales disponibles en el momento de la consulta.\nLos precios y la disponibilidad pueden cambiar sin previo aviso.\nVerifica siempre los datos en " + sn + " y CEX antes de realizar la compra.",
+    14, 28, { maxWidth: 182 }
+  );
+  doc.setFontSize(10); doc.setTextColor(124, 58, 237);
+  doc.text("Checklist antes de comprar:", 14, 46);
+  doc.setFontSize(8); doc.setTextColor(80);
+  const checks = [
+    "El juego sigue disponible en " + sn + ".",
+    "El precio " + sn + " no ha cambiado.",
+    "CEX sigue pagando igual en efectivo.",
+    "CEX sigue pagando igual en vale.",
+    "La plataforma coincide exactamente.",
+    "La edicion del juego coincide.",
+    "No comprar si el precio ha cambiado relevantemente.",
+    "Verificar limite de unidades aceptadas por CEX.",
+  ];
+  checks.forEach((c, i) => doc.text("\u2610 " + c, 14, 54 + i * 7));
+
+  doc.save("BonoCultural_Pos" + (state.selPoss + 1) + "_" + new Date().toISOString().slice(0, 10) + ".pdf");
+}
+
+// ============================================================
+// RENDER ENGINE
+// ============================================================
+function render() {
+  const app = document.getElementById("app");
+  if (!app) return;
+
+  let html = '<div class="app">';
+  if (state.screen === "setup")   html += renderSetup();
+  if (state.screen === "loading") html += renderLoading();
+  if (state.screen === "results") html += renderResults();
+  if (state.screen === "error")   html += renderError();
+  if (state.screen === "manual")  html += renderManual();
+  if (state.showModal)            html += renderModal();
+  html += "</div>";
+
+  app.innerHTML = html;
+  bindEvents();
+
+  if (state.screen === "results") setTimeout(initCharts, 140);
+}
+
+// ============================================================
+// SHARED HEADER
+// ============================================================
+function renderHeader(subtitleHtml) {
+  return `
+<div class="header">
+  <div class="brand">
+    <span class="brand-mark">${icon("gamepad", { size: 24 })}</span>
+    <div class="brand-text">
+      <h1>Optimizador Bono Cultural</h1>
+      ${subtitleHtml ? `<p>${subtitleHtml}</p>` : ""}
+    </div>
+  </div>
+</div>`;
+}
+
+// ============================================================
+// SETUP SCREEN
+// ============================================================
+function renderSetup() {
+  const si = storeInfo();
+  return `
+${renderHeader("Maximiza el dinero recuperado comprando videojuegos físicos con tu bono cultural y vendiendo en CEX España.<br>(Es probable que haya pérdidas pero el objetivo es minimizar estas si lo que quieres es tener el dinero en físico.)")}
+
+<div class="card">
+  <div class="lbl">${icon("wallet",{size:15})} Presupuesto del Bono (€)</div>
+  <input type="number" id="budget-in" value="${state.budget}" min="10" max="500" step="5" placeholder="Ej: 100">
+  <div style="margin-top:6px;font-size:.8rem;color:var(--text3)">Solo para videojuegos físicos con el bono cultural</div>
+</div>
+
+<div class="card">
+  <div class="lbl">${icon("store",{size:15})} Tienda donde comprar</div>
+  <select id="store-select">
+    <option value="fnac"        ${state.store==="fnac"?"selected":""}>FNAC España — fnac.es</option>
+    <option value="game"        ${state.store==="game"?"selected":""}>GAME — game.es</option>
+    <option value="corteingles" ${state.store==="corteingles"?"selected":""}>El Corte Inglés — elcorteingles.es</option>
+  </select>
+  <div style="margin-top:6px;font-size:.8rem;color:var(--text3)">Se buscaran precios en la tienda seleccionada y se compararan con CEX</div>
+</div>
+
+<div class="card">
+  <div class="lbl">${icon("barChart",{size:15})} Estrategia de recuperacion</div>
+  <div class="strat-btns">
+    <div class="strat-btn ${state.strategy==="cash"?"active":""}" data-strategy="cash">
+      <strong>${icon("banknote",{size:16})} Efectivo</strong>Maximizar dinero real recuperado
+    </div>
+    <div class="strat-btn ${state.strategy==="voucher"?"active":""}" data-strategy="voucher">
+      <strong>${icon("ticket",{size:16})} Vale CEX</strong>Maximizar saldo en tienda CEX
+    </div>
+    <div class="strat-btn ${state.strategy==="balanced"?"active":""}" data-strategy="balanced">
+      <strong>${icon("scale",{size:16})} Equilibrado</strong>Balance entre efectivo y vale
+    </div>
+  </div>
+  ${state.strategy==="voucher"?`<div class="warn-box" style="margin-top:12px"><p>${icon("alertTriangle",{size:14})} El vale CEX no es dinero liquido. Solo puede usarse para compras dentro de CEX.</p></div>`:""}
+</div>
+
+<div class="card">
+  <div class="lbl">${icon("target",{size:15})} Posibilidades a generar</div>
+  <div class="poss-btns">
+    ${[1,2,3,4,5].map(n=>`<div class="poss-btn ${state.possibilities===n?"active":""}" data-poss="${n}">${n}</div>`).join("")}
+  </div>
+  <div style="margin-top:8px;font-size:.8rem;color:var(--text3)">Combinaciones distintas que quieres comparar</div>
+</div>
+
+<div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap">
+  <button class="btn btn-primary" id="btn-analyze" style="flex:1;min-width:200px">
+    ${icon("search",{size:16})} Analizar precios en tiempo real
+  </button>
+  <button class="btn btn-secondary" id="btn-to-manual">
+    ${icon("edit",{size:16})} Modo manual
+  </button>
+</div>
+
+<div class="info-box" style="margin-top:14px">
+  <strong style="color:var(--purpleL)">${icon("info",{size:15})} Como funciona</strong><br>
+  La IA busca videojuegos físicos en <strong>${esc(si.name)} (${esc(si.domain)})</strong> con tu presupuesto, verifica precios de recompra en <strong>es.webuy.com (CEX)</strong>, y calcula las mejores combinaciones para minimizar tu pérdida económica. Si la búsqueda web no está disponible, usa el modo manual.
+</div>`;
+}
+
+// ============================================================
+// LOADING SCREEN
+// ============================================================
+function renderLoading() {
+  const steps = [
+    { id:1, lbl:"Iniciando analisis" },
+    { id:2, lbl:"Buscando en " + storeInfo().name + " y CEX Espana" },
+    { id:3, lbl:"Procesando datos oficiales" },
+    { id:4, lbl:"Calculando combinaciones optimas" },
+  ];
+  return `
+${renderHeader()}
+<div class="card loading-card">
+  <div class="spinner"></div>
+  <h2 style="margin-bottom:8px">Analizando en tiempo real</h2>
+  <p style="color:var(--text2);font-size:.9rem">Consultando ${storeInfo().name} Espana y CEX Espana con datos oficiales actuales...</p>
+  <div class="step-list">
+    ${steps.map(s => `
+      <div class="step-item ${state.loadStep > s.id ? "done" : state.loadStep === s.id ? "active" : ""}">
+        ${state.loadStep > s.id ? icon("checkCircle",{size:14}) : state.loadStep === s.id ? icon("clock",{size:14}) : icon("circle",{size:14})} ${s.lbl}
+      </div>`).join("")}
+  </div>
+</div>`;
+}
+
+// ============================================================
+// ERROR SCREEN
+// ============================================================
+function renderError() {
+  return `
+${renderHeader()}
+<div class="card error-box">
+  <div class="icon-xl">${icon("alertTriangle",{size:32})}</div>
+  <h2>No se pudo completar el analisis</h2>
+  <p>${esc(state.error || "Error desconocido")}</p>
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+    <button class="btn btn-primary" id="btn-retry">${icon("refresh",{size:16})} Reintentar</button>
+    <button class="btn btn-secondary" id="btn-to-manual">${icon("edit",{size:16})} Modo manual</button>
+    <button class="btn btn-secondary" id="btn-back">${icon("arrowLeft",{size:16})} Modificar parametros</button>
+  </div>
+</div>`;
+}
+
+// ============================================================
+// RESULTS SCREEN
+// ============================================================
+function renderResults() {
+  const { data } = state;
+  if (!data) return "";
+  const poss  = data.possibilities[state.selPoss];
+  const adv   = sellAdvice(poss);
+  const ts    = state.analysisTime?.toLocaleString("es-ES", { timeZone:"Europe/Madrid" }) || "-";
+  const src   = (data.sources_used || []).join(", ") || "Manual";
+  const isManual = src.toLowerCase().includes("manual");
+
+  return `
+${renderHeader(`Analisis: ${esc(ts)} (Europe/Madrid) &nbsp;|&nbsp; Fuentes: ${esc(src)}${isManual ? ' &nbsp;<span class="badge by">Datos manuales</span>' : ' &nbsp;<span class="badge bg">Datos oficiales</span>'}`)}
+
+${renderTabs(data.possibilities)}
+
+<div class="card">
+  <div class="poss-label ${state.selPoss===0?"first":"alt"}">
+    ${state.selPoss===0 ? icon("star",{size:14}) + " #1 Recomendacion principal" : icon("dot",{size:14}) + ` #${state.selPoss+1} Alternativa`}
+    &nbsp;<span style="font-weight:400;color:var(--text2)">— ${esc(poss.label)}</span>
+  </div>
+
+  ${renderDash(poss)}
+  ${renderFilters()}
+  <div class="table-wrap">${renderTable(poss.games)}</div>
+</div>
+
+${renderChartSection()}
+${renderSell(poss, adv)}
+${renderChecklist()}
+${renderWarning()}
+
+<div class="action-btns">
+  <button class="btn btn-primary"   id="btn-pdf">${icon("fileText",{size:16})} Exportar PDF</button>
+  <button class="btn btn-secondary" id="btn-replace">${icon("refresh",{size:16})} Mantener / Sustituir juegos</button>
+  <button class="btn btn-secondary" id="btn-reanalyze">${icon("search",{size:16})} Reanalizar todo</button>
+  <button class="btn btn-secondary" id="btn-back">${icon("arrowLeft",{size:16})} Modificar parametros</button>
+</div>`;
+}
+
+function renderTabs(poss) {
+  if (poss.length <= 1) return "";
+  return `<div class="tab-bar">
+    ${poss.map((p,i) => `
+      <div class="tab ${i===state.selPoss?"active":""} ${i===0?"best":""}" data-tab="${i}">
+        ${i===0?icon("star",{size:13}):icon("dot",{size:13})} #${i+1}
+        <span class="sub">${p.cashPct.toFixed(0)}% ef.</span>
+      </div>`).join("")}
+  </div>`;
+}
+
+function renderDash(p) {
+  const sn = storeInfo().name;
+  const m = [
+    { v: fmt(state.budget),            l:"Presupuesto",         c:"c-blue",  ic:"wallet"        },
+    { v: fmt(p.totalFnac),             l:"Gasto " + sn,         c:"",        ic:"store"         },
+    { v: fmt(p.remaining),             l:"Resto presupuesto",   c: p.remaining >= 0 ? "c-green" : "c-red", ic:"wallet" },
+    { v: fmt(p.totalCash),             l:"Recuperado efectivo", c:"c-green", ic:"banknote"      },
+    { v: fmt(p.totalVoucher),          l:"Recuperado vale",     c:"c-purple",ic:"ticket"        },
+    { v: (p.cashLoss>0?"-":"+") + fmt(Math.abs(p.cashLoss)),   l:"Perdida efectivo",  c: p.cashLoss>0?"c-red":"c-green", ic:"trendingDown" },
+    { v: (p.voucherLoss>0?"-":"+") + fmt(Math.abs(p.voucherLoss)), l:"Perdida vale",  c: p.voucherLoss>0?"c-yellow":"c-green", ic:"trendingDown" },
+    { v: p.cashPct.toFixed(1)+"%",     l:"Rentabilidad ef.",    c: p.cashPct>=80?"c-green":p.cashPct>=60?"c-yellow":"c-red", ic:"barChart" },
+    { v: p.uniqueGames,                l:"Juegos distintos",    c:"c-blue",  ic:"gamepad"       },
+    { v: p.totalUnits,                 l:"Unidades totales",    c:"",        ic:"package"       },
+    { v: p.diversification.toFixed(0)+"%",   l:"Diversificacion",       c: p.diversification>=80?"c-green":"c-yellow", ic:"target" },
+    { v: p.concentrationRisk.toFixed(0)+"%", l:"Riesgo concentracion",  c: p.concentrationRisk>30?"c-red":"c-green", ic:"alertTriangle" },
+  ];
+  return `<div class="metrics-grid">${m.map(x=>`
+    <div class="metric">
+      <div class="metric-top"><span class="metric-lbl">${x.l}</span>${icon(x.ic,{size:14})}</div>
+      <div class="metric-val ${x.c}">${x.v}</div>
+    </div>`).join("")}</div>`;
+}
+
+function renderFilters() {
+  return `
+<div class="filters-bar">
+  <div class="search-wrap">
+    <span class="search-ic">${icon("search",{size:15})}</span>
+    <input type="text" id="f-search" placeholder="Buscar juego..." value="${esc(state.searchQ)}">
+  </div>
+  <select id="f-plat" style="flex:1;min-width:130px">
+    <option value="all" ${state.filterPlatform==="all"?"selected":""}>Todas las plataformas</option>
+    ${["PS5","PS4","Nintendo Switch","Xbox Series","Xbox One"].map(p=>`<option value="${p}" ${state.filterPlatform===p?"selected":""}>${p}</option>`).join("")}
+  </select>
+  <select id="f-sort" style="flex:1;min-width:170px">
+    <option value="cash_pct"      ${state.sortField==="cash_pct"?"selected":""}>Mayor retorno efectivo</option>
+    <option value="voucher_pct"   ${state.sortField==="voucher_pct"?"selected":""}>Mayor retorno vale</option>
+    <option value="cash_loss"     ${state.sortField==="cash_loss"?"selected":""}>Menor perdida efectivo</option>
+    <option value="fnac_price"    ${state.sortField==="fnac_price"?"selected":""}>Precio FNAC</option>
+    <option value="name"          ${state.sortField==="name"?"selected":""}>Nombre</option>
+  </select>
+</div>`;
+}
+
+function renderTable(games) {
+  const q = state.searchQ.toLowerCase();
+  const sn = storeInfo().name;
+  let rows = games.filter(g => {
+    const ms = !q || g.name.toLowerCase().includes(q) || g.platform.toLowerCase().includes(q);
+    const mp = state.filterPlatform === "all" || g.platform === state.filterPlatform;
+    return ms && mp;
+  });
+
+  rows = [...rows].sort((a, b) => {
+    const f = state.sortField;
+    const va = f==="name" ? a.name.localeCompare(b.name) : (b[f] - a[f]);
+    return state.sortDir === "asc" ? -va : va;
+  });
+
+  if (!rows.length) return `<div style="text-align:center;padding:28px;color:var(--text3)">Ningun juego coincide con los filtros</div>`;
+
+  const thArr = [
+    ["",         ""],
+    ["name",     "Juego"],
+    ["",         "Plataforma"],
+    ["",         "Uds"],
+    ["fnac_price","Precio " + sn],
+    ["",         sn + " Total"],
+    ["",         "Disponibilidad"],
+    ["",         "CEX Ef./ud"],
+    ["",         "CEX Vale/ud"],
+    ["",         "CEX Ef. Total"],
+    ["cash_loss","Perdida Ef."],
+    ["cash_pct", "% Rec."],
+    ["",         "Riesgo"],
+    ["",         "Links"],
+  ];
+
+  const thead = `<thead><tr>${thArr.map(([f, lbl]) =>
+    `<th ${f?`data-th="${f}"`:""}>${lbl}</th>`
+  ).join("")}</tr></thead>`;
+
+  const tbody = `<tbody>${rows.map(g => {
+    const rb = retBadge(g.cash_pct);
+    const risk = g.risk || riskOf(g);
+    const avail = String(g.fnac_availability || "");
+    const availCls = avail.toLowerCase().includes("pocas") ? "by" : avail.toLowerCase().includes("disponible") ? "bg" : "br";
+    return `<tr>
+      <td>${g.image_url ? `<img src="${esc(g.image_url)}" class="img-thumb" onerror="this.style.display='none'"><span class="img-ph" style="display:none">${platformIcon()}</span>` : `<div class="img-ph">${platformIcon()}</div>`}</td>
+      <td style="max-width:220px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(g.name)}">${esc(g.name)}</td>
+      <td><span class="badge bp">${esc(g.platform)}</span></td>
+      <td style="text-align:center">${g.qty}</td>
+      <td>${fmt(g.fnac_price)}</td>
+      <td>${fmt(g.fnac_price * g.qty)}</td>
+      <td><span class="badge ${availCls}">${esc(avail || "Desconocida")}</span></td>
+      <td style="color:var(--green)">${fmt(g.cex_cash_price)}</td>
+      <td style="color:var(--purpleL)">${fmt(g.cex_voucher_price)}</td>
+      <td style="color:var(--green)">${fmt(g.cex_cash_price * g.qty)}</td>
+      <td style="color:var(--red)">-${fmt(g.cash_loss)}</td>
+      <td><span class="badge ${rb.cls}">${rb.ic ? icon(rb.ic,{size:11}) : ""}${rb.label} (${g.cash_pct.toFixed(0)}%)</span></td>
+      <td><span class="badge ${risk.cls}">${risk.label}</span></td>
+      <td style="white-space:nowrap">
+        ${g.fnac_url ? `<a href="${esc(g.fnac_url)}" target="_blank" class="link-a">${esc(sn)} ${icon("externalLink",{size:12})}</a> ` : ""}
+        ${g.cex_url  ? `<a href="${esc(g.cex_url)}"  target="_blank" class="link-a p">CEX ${icon("externalLink",{size:12})}</a>` : ""}
+      </td>
+    </tr>`;
+  }).join("")}</tbody>`;
+
+  return `<table>${thead}${tbody}</table>`;
+}
+
+function renderChartSection() {
+  const multi = (state.data?.possibilities?.length || 0) > 1;
+  const sn = storeInfo().name;
+  return `
+<div class="card">
+  <div class="sec-title">${icon("barChart",{size:18})} Analisis visual</div>
+  <div class="charts-grid">
+    <div class="chart-card"><h3>${esc(sn)} vs CEX por juego</h3><canvas id="ch-cmp"></canvas></div>
+    <div class="chart-card"><h3>Distribucion por plataforma</h3><canvas id="ch-plat"></canvas></div>
+    <div class="chart-card"><h3>% Recuperado por juego</h3><canvas id="ch-ret"></canvas></div>
+    ${multi ? `<div class="chart-card"><h3>Comparacion entre posibilidades</h3><canvas id="ch-poss"></canvas></div>` : ""}
+  </div>
+</div>`;
+}
+
+function renderSell(poss, adv) {
+  if (!adv) return "";
+  const map = {
+    now:  { cls:"now",  ic:"checkCircle", lbl:"Comprar y vender ahora" },
+    wait: { cls:"wait", ic:"clock",       lbl:"Comprar ahora y esperar a vender" },
+    no:   { cls:"no",   ic:"xCircle",     lbl:"No comprar todavia" },
+  };
+  const r = map[adv.rec] || map.now;
+
+  function riskPill(level, label, ic) {
+    const fillCls = level==="Alto" ? "risk-fill-high" : level==="Bajo" ? "risk-fill-low" : "risk-fill-med";
+    const badgeCls = level==="Alto" ? "c-red" : level==="Bajo" ? "c-green" : "c-yellow";
+    return `<div class="risk-item">
+      <h4>${icon(ic,{size:13})} ${label}</h4>
+      <strong class="${badgeCls}">${level}</strong>
+      <div class="risk-bar"><div class="${fillCls}"></div></div>
+    </div>`;
+  }
+
+  return `
+<div class="card">
+  <div class="sec-title">${icon("lightbulb",{size:18})} Vender ahora o esperar</div>
+  <div class="sell-box">
+    <div class="sell-rec ${r.cls}">
+      <div class="rec-icon">${icon(r.ic,{size:22})}</div>
+      <div>
+        <strong style="font-size:1rem">${r.lbl}</strong>
+        <p style="color:var(--text2);font-size:.85rem;margin-top:5px">${esc(adv.reason)}</p>
+        <p style="font-size:.78rem;color:var(--text3);margin-top:4px">Nivel de confianza: <strong>${adv.conf}</strong></p>
+      </div>
+    </div>
+    <div class="risk-grid">
+      ${riskPill(adv.riskPrice, "Riesgo cambio de precio", "trendingDown")}
+      ${riskPill(adv.riskStock, "Riesgo falta de stock", "package")}
+      ${riskPill(adv.riskCex,   "Riesgo bajada CEX", "store")}
+      ${riskPill("Medio",       "Riesgo edicion/plataforma", "clipboard")}
+    </div>
+    <p style="font-size:.75rem;color:var(--text3);margin-top:12px">
+      ${icon("alertTriangle",{size:13})} No existen datos oficiales suficientes para predecir la evolucion futura de estos precios. Esta recomendacion se basa exclusivamente en el estado actual del mercado.
+    </p>
+  </div>
+</div>`;
+}
+
+function renderChecklist() {
+  const sn = storeInfo().name;
+  const items = [
+    "El juego sigue disponible en " + sn,
+    "El precio " + sn + " no ha cambiado",
+    "CEX sigue pagando igual en efectivo",
+    "CEX sigue pagando igual en vale",
+    "La plataforma coincide exactamente",
+    "La edicion del juego coincide",
+    "No comprar si el precio cambio relevantemente",
+    "Verificar limite de unidades en CEX",
+  ];
+  return `
+<div class="card">
+  <div class="sec-title">${icon("checkCircle",{size:18})} Checklist antes de comprar</div>
+  <div class="checklist-grid">${items.map(i=>`<div class="check-item">${icon("square",{size:15})}${esc(i)}</div>`).join("")}</div>
+</div>`;
+}
+
+function renderWarning() {
+  const sn = storeInfo().name;
+  return `
+<div class="warn-box">
+  <h3>${icon("alertTriangle",{size:16})} Aviso importante</h3>
+  <p>Este analisis se ha elaborado con la informacion oficial disponible en el momento de la consulta. Los precios, la disponibilidad y los valores de recompra de CEX pueden modificarse en cualquier momento sin previo aviso. Verifica siempre los datos en las paginas oficiales de ${esc(sn)} y CEX antes de realizar cualquier compra.</p>
+</div>`;
+}
+
+// ============================================================
+// MODAL — REPLACE/KEEP FLOW
+// ============================================================
+function renderModal() {
+  const poss = state.data?.possibilities?.[state.selPoss];
+  if (!poss) return "";
+
+  const keptTotal = poss.games
+    .filter(g => (state.replaceStatus[g.name] || "keep") === "keep")
+    .reduce((s,g) => s + g.fnac_price * g.qty, 0);
+  const left = state.budget - keptTotal;
+
+  return `
+<div class="modal-ov" id="modal-ov">
+  <div class="modal">
+    <h2>${icon("refresh",{size:19})} Gestionar juegos de la posibilidad #${state.selPoss+1}</h2>
+    <p style="color:var(--text2);font-size:.85rem;margin-bottom:16px">Elige que hacer con cada juego. El presupuesto disponible con los juegos mantenidos se usara para buscar sustitutos en el catalogo verificado.</p>
+    ${poss.games.map(g => {
+      const st = state.replaceStatus[g.name] || "keep";
+      return `<div class="keep-row">
+        <div>
+          <strong style="font-size:.88rem">${esc(g.name)}</strong>
+          <div style="font-size:.78rem;color:var(--text2)">${esc(g.platform)} &mdash; ${fmt(g.fnac_price)} &mdash; Rec: ${g.cash_pct.toFixed(0)}%</div>
+        </div>
+        <div class="keep-btns">
+          <button class="kbtn ${st==="keep"?"keep":""}"    data-game="${esc(g.name)}" data-act="keep">Mantener</button>
+          <button class="kbtn ${st==="remove"?"remove":""}" data-game="${esc(g.name)}" data-act="remove">Eliminar</button>
+          <button class="kbtn ${st==="replace"?"replace":""}" data-game="${esc(g.name)}" data-act="replace">Sustituir</button>
+        </div>
+      </div>`;
+    }).join("")}
+    <div style="margin:14px 0;padding:12px;background:var(--card2);border-radius:8px;font-size:.85rem;color:var(--text2)">
+      Gasto comprometido: <strong>${fmt(keptTotal)}</strong> &nbsp;|&nbsp;
+      Presupuesto para sustitutos: <strong class="c-blue">${fmt(left)}</strong>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn btn-secondary btn-sm" id="btn-modal-cancel">Cancelar</button>
+      <button class="btn btn-primary btn-sm" id="btn-modal-ok">Buscar sustitutos con ${fmt(left)}</button>
+    </div>
+  </div>
+</div>`;
+}
+
+// ============================================================
+// MANUAL MODE
+// ============================================================
+function renderManual() {
+  const si = storeInfo();
+  return `
+${renderHeader(`Modo manual — Introduce precios verificados por ti desde ${esc(si.name)} y CEX`)}
+
+<div class="card">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div>
+      <div class="lbl">Presupuesto (€)</div>
+      <input type="number" id="m-budget" value="${state.budget}" min="10" step="5">
+    </div>
+    <div>
+      <div class="lbl">Estrategia</div>
+      <select id="m-strat">
+        <option value="cash"     ${state.strategy==="cash"?"selected":""}>Priorizar efectivo</option>
+        <option value="voucher"  ${state.strategy==="voucher"?"selected":""}>Priorizar vale</option>
+        <option value="balanced" ${state.strategy==="balanced"?"selected":""}>Equilibrado</option>
+      </select>
+    </div>
+  </div>
+  <div style="margin-top:12px">
+    <div class="lbl">${icon("store",{size:15})} Tienda</div>
+    <select id="m-store">
+      <option value="fnac"        ${state.store==="fnac"?"selected":""}>FNAC España</option>
+      <option value="game"        ${state.store==="game"?"selected":""}>GAME</option>
+      <option value="corteingles" ${state.store==="corteingles"?"selected":""}>El Corte Inglés</option>
+    </select>
+  </div>
+</div>
+
+<div class="card">
+  <div class="sec-title">${icon("plus",{size:18})} Anadir juego manualmente</div>
+  <div class="manual-grid">
+    <div><div class="lbl">Nombre del juego</div><input type="text" id="m-name" placeholder="Ej: Elden Ring"></div>
+    <div><div class="lbl">Plataforma</div>
+      <select id="m-plat">
+        <option>PS5</option><option>PS4</option><option>Nintendo Switch</option><option>Xbox Series</option><option>Xbox One</option>
+      </select>
+    </div>
+    <div><div class="lbl">Precio ${esc(si.name)} (€)</div><input type="number" id="m-fp" min="0" step="0.01" placeholder="39.99"></div>
+    <div><div class="lbl">Disponibilidad ${esc(si.name)}</div>
+      <select id="m-avail"><option>Disponible</option><option>Pocas unidades</option><option>No disponible</option></select>
+    </div>
+    <div><div class="lbl">CEX Efectivo (€)</div><input type="number" id="m-cc" min="0" step="0.01" placeholder="25.00"></div>
+    <div><div class="lbl">CEX Vale (€)</div><input type="number" id="m-cv" min="0" step="0.01" placeholder="30.00"></div>
+    <div><div class="lbl">URL ${esc(si.name)} (opcional)</div><input type="text" id="m-fu" placeholder="https://${esc(si.domain)}/..."></div>
+    <div><div class="lbl">URL CEX (opcional)</div><input type="text" id="m-cu" placeholder="https://es.webuy.com/..."></div>
+  </div>
+  <button class="btn btn-secondary btn-sm" id="btn-m-add" style="margin-top:12px">${icon("plus",{size:14})} Anadir juego</button>
+</div>
+
+${state.manualGames.length > 0 ? `
+<div class="card">
+  <div class="sec-title">${icon("clipboard",{size:18})} Juegos anadidos (${state.manualGames.length})</div>
+  ${state.manualGames.map((g,i) => `
+    <div class="manual-game-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div>
+          <strong>${esc(g.name)}</strong> <span class="badge bp">${esc(g.platform)}</span>
+          <div style="margin-top:6px;font-size:.82rem;color:var(--text2)">
+            ${esc(si.name)}: ${fmt(g.fnac_price)} &nbsp;|&nbsp; CEX ef: ${fmt(g.cex_cash_price)} &nbsp;|&nbsp; CEX vale: ${fmt(g.cex_voucher_price)} &nbsp;|&nbsp;
+            Recuperacion: <strong>${g.cash_pct.toFixed(1)}%</strong>
+          </div>
+          ${g.fnac_url ? `<a href="${esc(g.fnac_url)}" target="_blank" class="link-a" style="margin-top:4px">${esc(si.name)} ${icon("externalLink",{size:12})}</a> ` : ""}
+          ${g.cex_url  ? `<a href="${esc(g.cex_url)}" target="_blank" class="link-a p">CEX ${icon("externalLink",{size:12})}</a>` : ""}
+        </div>
+        <button class="btn btn-danger btn-sm" data-rm="${i}">${icon("x",{size:13})}</button>
+      </div>
+      <div style="margin-top:6px;font-size:.72rem;color:var(--text3)">${icon("alertTriangle",{size:12})} Datos verificados manualmente por el usuario, no por la IA automáticamente</div>
+    </div>`).join("")}
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px">
+    <select id="m-poss" style="width:auto">
+      ${[1,2,3,4,5].map(n=>`<option value="${n}" ${state.possibilities===n?"selected":""}>${n} posibilidad${n>1?"es":""}</option>`).join("")}
+    </select>
+    <button class="btn btn-primary" id="btn-m-calc">${icon("calculator",{size:16})} Calcular combinaciones optimas</button>
+  </div>
+</div>` : `
+<div class="info-box" style="margin-top:14px">Anade al menos un juego con precios verificados en ${esc(si.name)} y CEX para calcular combinaciones.</div>`}
+
+<div style="margin-top:12px">
+  <button class="btn btn-secondary" id="btn-back">${icon("arrowLeft",{size:16})} Volver al inicio</button>
+</div>`;
+}
+
+// ============================================================
+// EVENT BINDING
+// ============================================================
+function bindEvents() {
+  const $ = id => document.getElementById(id);
+  const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
+
+  // Setup
+  on("budget-in", "input", e => { state.budget = parseFloat(e.target.value) || 150; });
+  on("store-select", "change", e => { state.store = e.target.value; render(); });
+  on("btn-analyze",  "click", analyzeGames);
+  on("btn-to-manual","click", () => { state.screen = "manual"; render(); });
+
+  // Strategy pills
+  document.querySelectorAll("[data-strategy]").forEach(el =>
+    el.addEventListener("click", () => { state.strategy = el.dataset.strategy; render(); })
+  );
+
+  // Possibility count
+  document.querySelectorAll("[data-poss]").forEach(el =>
+    el.addEventListener("click", () => { state.possibilities = +el.dataset.poss; render(); })
+  );
+
+  // Error screen
+  on("btn-retry",     "click", analyzeGames);
+  on("btn-to-manual", "click", () => { state.screen = "manual"; render(); });
+
+  // Back / reanalyze (shared id across screens)
+  document.querySelectorAll("#btn-back").forEach(el =>
+    el.addEventListener("click", () => { state.screen = "setup"; render(); })
+  );
+  on("btn-reanalyze", "click", analyzeGames);
+
+  // Tabs
+  document.querySelectorAll("[data-tab]").forEach(el =>
+    el.addEventListener("click", () => { state.selPoss = +el.dataset.tab; render(); })
+  );
+
+  // Filters
+  on("f-search", "input", e => { state.searchQ = e.target.value; render(); });
+  on("f-plat",   "change", e => { state.filterPlatform = e.target.value; render(); });
+  on("f-sort",   "change", e => { state.sortField = e.target.value; render(); });
+
+  // Table sort
+  document.querySelectorAll("th[data-th]").forEach(el =>
+    el.addEventListener("click", () => {
+      const f = el.dataset.th;
+      if (state.sortField === f) state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
+      else { state.sortField = f; state.sortDir = "desc"; }
+      render();
+    })
+  );
+
+  // Results actions
+  on("btn-pdf",     "click", exportPDF);
+  on("btn-replace", "click", () => { state.showModal = true; state.replaceStatus = {}; render(); });
+
+  // Modal
+  on("btn-modal-cancel", "click", () => { state.showModal = false; render(); });
+  on("modal-ov", "click", e => { if (e.target.id === "modal-ov") { state.showModal = false; render(); } });
+  on("btn-modal-ok", "click", () => {
+    state.showModal = false;
+    const poss = state.data?.possibilities?.[state.selPoss];
+    if (!poss) { render(); return; }
+
+    const kept = poss.games.filter(g => (state.replaceStatus[g.name] || "keep") === "keep");
+    const keptBudget = kept.reduce((s,g) => s + g.fnac_price * g.qty, 0);
+    const remBudget  = state.budget - keptBudget;
+
+    if (remBudget < 5) {
+      alert("No hay presupuesto disponible para buscar sustitutos.");
+      render(); return;
+    }
+
+    const usedNames = new Set(kept.map(g => g.name));
+    const pool = (state.data.games || []).filter(g => !usedNames.has(g.name));
+    const subs = runGreedy(pool, remBudget, g => g.cex_cash_price);
+    const merged = [...kept, ...subs];
+    const updated = { ...calcMetrics(merged, state.budget), label: "Personalizado (mantener + sustitutos)", rank: state.selPoss + 1 };
+    state.data.possibilities[state.selPoss] = updated;
+    state.replaceStatus = {};
+    render();
+  });
+
+  // Modal keep/remove/replace buttons
+  document.querySelectorAll("[data-game][data-act]").forEach(el =>
+    el.addEventListener("click", () => { state.replaceStatus[el.dataset.game] = el.dataset.act; render(); })
+  );
+
+  // Manual mode
+  on("m-store", "change", e => { state.store = e.target.value; render(); });
+  on("btn-m-add", "click", () => {
+    const name  = $("m-name")?.value?.trim();
+    const plat  = $("m-plat")?.value;
+    const fp    = parseFloat($("m-fp")?.value);
+    const avail = $("m-avail")?.value;
+    const cc    = parseFloat($("m-cc")?.value);
+    const cv    = parseFloat($("m-cv")?.value);
+    const fu    = $("m-fu")?.value?.trim();
+    const cu    = $("m-cu")?.value?.trim();
+
+    if (!name || isNaN(fp) || isNaN(cc) || isNaN(cv)) {
+      alert("Completa al menos: nombre, precio " + storeInfo().name + ", CEX efectivo y CEX vale."); return;
+    }
+
+    const g = { name, platform: plat, fnac_price: fp, fnac_availability: avail, cex_cash_price: cc, cex_voucher_price: cv, fnac_url: fu, cex_url: cu, image_url: "", verification_status: "manual", notes: "Verificado manualmente por el usuario", qty: 1 };
+    const norm = normalizeGames([g], state.budget);
+    if (norm.length) { state.manualGames.push(norm[0]); render(); }
+    else alert("El juego no paso la validacion (precio " + storeInfo().name + " superior al presupuesto o datos incompletos).");
+  });
+
+  document.querySelectorAll("[data-rm]").forEach(el =>
+    el.addEventListener("click", () => { state.manualGames.splice(+el.dataset.rm, 1); render(); })
+  );
+
+  on("btn-m-calc", "click", () => {
+    if (!state.manualGames.length) { alert("Anade al menos un juego."); return; }
+    const b = parseFloat($("m-budget")?.value) || state.budget;
+    const s = $("m-strat")?.value || state.strategy;
+    const c = +($("m-poss")?.value || 3);
+    const st = $("m-store")?.value || state.store;
+    state.budget = b; state.strategy = s; state.possibilities = c; state.store = st;
+
+    const poss = generatePossibilities(state.manualGames, b, s, c);
+    state.data = {
+      analysis_datetime: new Date().toISOString().slice(0,19),
+      timezone: "Europe/Madrid",
+      sources_used: ["Manual (usuario)"],
+      games: state.manualGames,
+      possibilities: poss,
+      excluded_games: [],
+      errors: [],
+    };
+    state.analysisTime = new Date();
+    state.selPoss = 0;
+    state.screen = "results";
+    render();
+  });
+}
+
+// ============================================================
+// INIT
+// ============================================================
+render();
+
+// ============================================================
+// PWA — SERVICE WORKER REGISTRATION
+// ============================================================
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

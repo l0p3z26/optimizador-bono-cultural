@@ -1,0 +1,7 @@
+name = "bono-cultural-proxy"
+main = "index.js"
+compatibility_date = "2024-09-01"
+
+kv_namespaces = [
+  { binding = "KEY_ROTATION", id = "PONER_ID_KV_AQUI" }
+]
