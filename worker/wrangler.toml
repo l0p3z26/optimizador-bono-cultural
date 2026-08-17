@@ -3,5 +3,5 @@ main = "index.js"
 compatibility_date = "2024-09-01"
 
 kv_namespaces = [
-  { binding = "KEY_ROTATION", id = "PONER_ID_KV_AQUI" }
+  { binding = "KEY_ROTATION", id = "c81a8d5545d2496d9eeb38157dcff68d" }
 ]

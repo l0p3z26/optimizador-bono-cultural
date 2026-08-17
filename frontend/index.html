@@ -17,6 +17,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>
 :root{--bg:#0d0e1a;--bg2:#12152a;--card:#1a1d35;--card2:#20243f;--border:#2d3158;--purple:#7c3aed;--purpleL:#a78bfa;--blue:#3b82f6;--blueL:#93c5fd;--green:#10b981;--yellow:#f59e0b;--red:#ef4444;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--r:14px;--r-sm:10px;--sh:0 8px 24px -4px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.3);--sh-glow:0 0 0 1px rgba(124,58,237,.15),0 8px 30px rgba(124,58,237,.15);--ease:cubic-bezier(.4,0,.2,1)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -48,6 +49,8 @@ input[type=number],input[type=text],select{background:var(--bg2);border:1px soli
 input:focus,select:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(124,58,237,.18)}
 select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:var(--r-sm);font-size:.92rem;font-weight:600;cursor:pointer;border:none;transition:.18s var(--ease);text-decoration:none;font-family:inherit}
+.btn:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.3)}
+.btn:disabled:hover{transform:none;box-shadow:none}
 .btn-primary{background:linear-gradient(135deg,var(--purple),var(--blue));color:#fff;box-shadow:0 4px 16px rgba(124,58,237,.35)}
 .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,58,237,.45)}
 .btn-primary:active{transform:translateY(0) scale(.98)}
@@ -176,7 +179,8 @@ tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--purple)}
 // ============================================================
 // CONFIG
 // ============================================================
-const WORKER_URL = "PONER_URL_DEL_WORKER";
+const WORKER_URL = "https://bono-cultural-proxy.lopezmorante08.workers.dev";
+const TURNSTILE_SITE_KEY = "0x4AAAAAAESfcxlncqaUdp2P";
 
 // ============================================================
 // ICONS — set SVG inline (sin librerias externas)
@@ -245,9 +249,58 @@ let state = {
   replaceStatus: {},
   manualGames: [],
   store: "fnac",   // fnac | game | corteingles
+  turnstileToken: null,
 };
 
 const chartInst = {};
+
+// ============================================================
+// TURNSTILE — verificacion humana antes de gastar cuota de la API
+// ============================================================
+let turnstileNode = null;
+let turnstileWidgetId = null;
+
+function syncTurnstileGatedButtons() {
+  document.querySelectorAll("[data-needs-turnstile]").forEach(btn => {
+    btn.disabled = !state.turnstileToken;
+  });
+}
+
+function onTurnstileSuccess(token) {
+  state.turnstileToken = token;
+  syncTurnstileGatedButtons();
+}
+
+function onTurnstileReset() {
+  state.turnstileToken = null;
+  syncTurnstileGatedButtons();
+}
+
+function mountTurnstile() {
+  if (!window.turnstile) { setTimeout(mountTurnstile, 200); return; }
+  const slot = document.getElementById("turnstile-slot");
+  if (!slot) return;
+
+  if (!turnstileNode) {
+    turnstileNode = document.createElement("div");
+    turnstileWidgetId = window.turnstile.render(turnstileNode, {
+      sitekey: TURNSTILE_SITE_KEY,
+      theme: "dark",
+      callback: onTurnstileSuccess,
+      "expired-callback": onTurnstileReset,
+      "error-callback": onTurnstileReset,
+    });
+  }
+  if (turnstileNode.parentNode !== slot) slot.appendChild(turnstileNode);
+  syncTurnstileGatedButtons();
+}
+
+function resetTurnstile() {
+  state.turnstileToken = null;
+  if (window.turnstile && turnstileWidgetId !== null) {
+    window.turnstile.reset(turnstileWidgetId);
+  }
+}
 
 // ============================================================
 // UTILS
@@ -286,11 +339,11 @@ function storeInfo() {
 // ============================================================
 // GEMINI API (via Cloudflare Worker proxy)
 // ============================================================
-async function callGemini(systemPrompt, prompt) {
+async function callGemini(systemPrompt, prompt, turnstileToken) {
   const res = await fetch(WORKER_URL + "/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, systemPrompt })
+    body: JSON.stringify({ prompt, systemPrompt, turnstileToken })
   });
 
   if (!res.ok) {
@@ -451,6 +504,13 @@ function generatePossibilities(pool, budget, strategy, count) {
 // ANALYSIS ENTRY POINT
 // ============================================================
 async function analyzeGames() {
+  if (!state.turnstileToken) {
+    alert("Completa la verificacion de que no eres un robot antes de analizar.");
+    return;
+  }
+  const humanToken = state.turnstileToken;
+  resetTurnstile();
+
   state.screen = "loading";
   state.loadStep = 1;
   state.error = null;
@@ -482,7 +542,7 @@ Devuelve UNICAMENTE este JSON exacto (sin nada mas, ni antes ni despues):
     state.loadStep = 2;
     render();
 
-    const rawText = await callGemini(sysPrompt, userMsg);
+    const rawText = await callGemini(sysPrompt, userMsg, humanToken);
 
     state.loadStep = 3;
     render();
@@ -775,6 +835,7 @@ function render() {
   bindEvents();
 
   if (state.screen === "results") setTimeout(initCharts, 140);
+  if (["setup", "error", "results"].includes(state.screen)) setTimeout(mountTurnstile, 50);
 }
 
 // ============================================================
@@ -841,8 +902,14 @@ ${renderHeader("Maximiza el dinero recuperado comprando videojuegos físicos con
   <div style="margin-top:8px;font-size:.8rem;color:var(--text3)">Combinaciones distintas que quieres comparar</div>
 </div>
 
+<div class="card">
+  <div class="lbl">${icon("checkCircle",{size:15})} Verificacion</div>
+  <div id="turnstile-slot" style="display:flex;justify-content:center;min-height:65px;align-items:center"></div>
+  <div style="margin-top:2px;font-size:.78rem;color:var(--text3)">Confirma que no eres un robot para poder analizar precios</div>
+</div>
+
 <div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap">
-  <button class="btn btn-primary" id="btn-analyze" style="flex:1;min-width:200px">
+  <button class="btn btn-primary" id="btn-analyze" data-needs-turnstile ${state.turnstileToken?"":"disabled"} style="flex:1;min-width:200px">
     ${icon("search",{size:16})} Analizar precios en tiempo real
   </button>
   <button class="btn btn-secondary" id="btn-to-manual">
@@ -891,8 +958,9 @@ ${renderHeader()}
   <div class="icon-xl">${icon("alertTriangle",{size:32})}</div>
   <h2>No se pudo completar el analisis</h2>
   <p>${esc(state.error || "Error desconocido")}</p>
+  <div id="turnstile-slot" style="display:flex;justify-content:center;min-height:65px;align-items:center;margin-bottom:6px"></div>
   <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-    <button class="btn btn-primary" id="btn-retry">${icon("refresh",{size:16})} Reintentar</button>
+    <button class="btn btn-primary" id="btn-retry" data-needs-turnstile ${state.turnstileToken?"":"disabled"}>${icon("refresh",{size:16})} Reintentar</button>
     <button class="btn btn-secondary" id="btn-to-manual">${icon("edit",{size:16})} Modo manual</button>
     <button class="btn btn-secondary" id="btn-back">${icon("arrowLeft",{size:16})} Modificar parametros</button>
   </div>
@@ -932,10 +1000,15 @@ ${renderSell(poss, adv)}
 ${renderChecklist()}
 ${renderWarning()}
 
+<div class="card" style="text-align:center">
+  <div id="turnstile-slot" style="display:flex;justify-content:center;min-height:65px;align-items:center"></div>
+  <div style="font-size:.78rem;color:var(--text3)">Verificacion necesaria para reanalizar</div>
+</div>
+
 <div class="action-btns">
   <button class="btn btn-primary"   id="btn-pdf">${icon("fileText",{size:16})} Exportar PDF</button>
   <button class="btn btn-secondary" id="btn-replace">${icon("refresh",{size:16})} Mantener / Sustituir juegos</button>
-  <button class="btn btn-secondary" id="btn-reanalyze">${icon("search",{size:16})} Reanalizar todo</button>
+  <button class="btn btn-secondary" id="btn-reanalyze" data-needs-turnstile ${state.turnstileToken?"":"disabled"}>${icon("search",{size:16})} Reanalizar todo</button>
   <button class="btn btn-secondary" id="btn-back">${icon("arrowLeft",{size:16})} Modificar parametros</button>
 </div>`;
 }

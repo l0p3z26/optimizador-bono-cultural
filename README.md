@@ -4,12 +4,23 @@ App de una sola página que ayuda a optimizar el Bono Cultural Joven comprando
 videojuegos físicos (FNAC, GAME o El Corte Inglés) y comparando precios de
 recompra en CEX España, para maximizar el dinero recuperado.
 
-- **Frontend**: HTML/JS vanilla, PWA instalable en iOS y Android, hosteado
-  gratis en Cloudflare Pages con despliegue automático desde este repo de GitHub.
+- **Frontend**: HTML/JS vanilla, PWA instalable en iOS y Android, en Cloudflare
+  (Workers Static Assets) con despliegue automático desde este repo de GitHub.
 - **Backend**: Cloudflare Worker que actúa de proxy hacia la API de Gemini,
-  ocultando las API keys y rotando entre 10 keys con failover automático.
+  ocultando las API keys, rotando entre 10 keys con failover automático, y
+  exigiendo verificación humana (Cloudflare Turnstile) antes de gastar cuota.
 
 Repo: https://github.com/l0p3z26/optimizador-bono-cultural
+
+## Estado actual (ya desplegado)
+
+- Frontend: https://optimizador-bono-cultural.lopezmorante08.workers.dev
+- Worker proxy: https://bono-cultural-proxy.lopezmorante08.workers.dev
+- Modelo: `gemini-2.5-flash` — es el único modelo de Gemini con búsqueda web
+  (`google_search`) gratuita sin tarjeta (500 peticiones/día). Los modelos
+  3.x no tienen búsqueda gratuita bajo ningún concepto (requieren facturación).
+  **Google tiene programada la retirada de `gemini-2.5-flash` para el
+  16 de octubre de 2026** — habrá que migrar a su sucesor antes de esa fecha.
 
 ## Estructura
 
@@ -18,6 +29,8 @@ Repo: https://github.com/l0p3z26/optimizador-bono-cultural
   index.html         La app
   manifest.json       Manifest PWA
   service-worker.js   Cache offline
+  wrangler.toml        Config para desplegar /frontend como sitio estatico
+  .assetsignore        Excluye wrangler.toml del propio sitio publicado
   icons/
     icon-192.png
     icon-512.png
@@ -30,109 +43,90 @@ Repo: https://github.com/l0p3z26/optimizador-bono-cultural
 API-key.txt            (local, NO se sube al repo — ver .gitignore)
 ```
 
+Secrets configurados en el Worker (Cloudflare → nunca en el repo):
+`GEMINI_KEY_1` … `GEMINI_KEY_10`, `TURNSTILE_SECRET`.
+
 ---
 
-## Paso 1 — Deploy del Worker
+## Cómo se desplegó (referencia para reproducirlo)
+
+### Paso 1 — Worker proxy
 
 ```bash
 npm install -g wrangler
 wrangler login
 ```
 
-Desde la carpeta `/worker`:
+Desde `/worker`:
 
 ```bash
-wrangler kv:namespace create KEY_ROTATION
+wrangler kv namespace create KEY_ROTATION
 ```
 
-> Si tienes una versión reciente de wrangler y el comando anterior falla,
-> usa la sintaxis nueva: `wrangler kv namespace create KEY_ROTATION`.
+Copia el `id` devuelto a `worker/wrangler.toml` (`kv_namespaces[0].id`).
 
-Copia el `id` que te devuelve el comando y pégalo en `worker/wrangler.toml`,
-sustituyendo `PONER_ID_KV_AQUI`:
-
-```toml
-kv_namespaces = [
-  { binding = "KEY_ROTATION", id = "TU_ID_AQUI" }
-]
-```
-
-Añade las 10 API keys de Gemini como secrets (nunca se guardan en el repo,
-solo viven en Cloudflare):
+Sube las 10 keys de Gemini como secrets (nunca se guardan en el repo):
 
 ```bash
 wrangler secret put GEMINI_KEY_1
-wrangler secret put GEMINI_KEY_2
 ...
 wrangler secret put GEMINI_KEY_10
 ```
 
-Cada comando te pedirá pegar el valor de la key por consola.
-
-Ya tienes un `API-key.txt` local con 10 keys de Gemini generadas. Para no
-teclearlas una a una, puedes usar el script incluido (lee `API-key.txt`,
-que está en `.gitignore` y nunca se sube a GitHub):
+O usa el script incluido, que lee `API-key.txt` (gitignored):
 
 ```powershell
 cd worker
 ./setup-secrets.ps1
 ```
 
-Por último, despliega el Worker:
+### Paso 2 — Turnstile (verificación humana)
+
+1. Dashboard de Cloudflare → **Turnstile → Add widget**.
+2. Modo: **Managed**. Dominio: el del frontend
+   (`optimizador-bono-cultural.lopezmorante08.workers.dev`).
+3. Copia el **Site Key** a `frontend/index.html` (`TURNSTILE_SITE_KEY`).
+4. Copia el **Secret Key** como secret del Worker:
+   ```bash
+   wrangler secret put TURNSTILE_SECRET
+   ```
+
+### Paso 3 — Deploy del Worker
 
 ```bash
+cd worker
 wrangler deploy
 ```
 
-Copia la URL que te da (algo como `https://bono-cultural-proxy.tuusuario.workers.dev`).
+Copia la URL resultante a `ALLOWED_ORIGIN` en `worker/index.js`, y a
+`WORKER_URL` en `frontend/index.html`.
 
-## Paso 2 — Configurar el frontend
+### Paso 4 — Deploy del frontend (Cloudflare Workers Builds, vía Git)
 
-En [frontend/index.html](frontend/index.html), busca:
+Cloudflare unificó Pages y Workers: conectar un repo desde
+**Workers & Pages → Create → Connect to Git** ya no pide una "carpeta de
+build" sino un **Build command** y un **Deploy command** (usan `wrangler`
+por debajo, incluso para sitios estáticos, vía "Workers Static Assets").
+Como es un monorepo (`/frontend` + `/worker`), hace falta apuntar la
+carpeta correcta — para eso existe `frontend/wrangler.toml`.
 
-```js
-const WORKER_URL = "PONER_URL_DEL_WORKER";
-```
-
-y sustitúyelo por la URL real del Worker del paso anterior (sin barra final).
-
-En [worker/index.js](worker/index.js), busca:
-
-```js
-const ALLOWED_ORIGIN = "https://PONER_PROYECTO.pages.dev";
-```
-
-y sustitúyelo por la URL real que te da Cloudflare Pages en el paso siguiente.
-Vuelve a desplegar el Worker tras el cambio:
-
-```bash
-wrangler deploy
-```
-
-## Paso 3 — Deploy en Cloudflare Pages
-
-El código ya está en GitHub: https://github.com/l0p3z26/optimizador-bono-cultural
-Cloudflare Pages se conecta directamente a ese repo y lo redespliega solo en
-cada push a `main` — no hace falta mover ni renombrar carpetas como con
-GitHub Pages, se apunta directamente a `/frontend`.
-
-1. Entra en el [dashboard de Cloudflare](https://dash.cloudflare.com) →
-   **Workers & Pages → Create → Pages → Connect to Git**.
-2. Autoriza la GitHub App de Cloudflare Pages y selecciona el repositorio
-   `l0p3z26/optimizador-bono-cultural`.
-3. Configuración de build:
-   - **Framework preset**: None
-   - **Build command**: (vacío — es HTML/JS estático, no hay build)
-   - **Build output directory**: `frontend`
+1. Dashboard de Cloudflare → **Workers & Pages → Create → Connect to Git**
+   → autoriza la GitHub App → selecciona `l0p3z26/optimizador-bono-cultural`.
+2. Nombre de proyecto: `optimizador-bono-cultural` (debe coincidir con el
+   `name` de `frontend/wrangler.toml`).
+3. Configuración:
+   - **Path** (en Advanced settings): `/frontend` — imprescindible, si no
+     wrangler no encuentra `frontend/wrangler.toml`.
+   - **Build command**: vacío.
+   - **Deploy command**: `npx wrangler deploy` (por defecto).
+   - **Non-production branch deploy command**: `npx wrangler versions upload`
+     (por defecto, no tocar).
+   - **API token**: "Create new token" (automático).
 4. **Save and Deploy**.
-5. Cloudflare te da una URL del tipo `https://optimizador-bono-cultural.pages.dev`.
-   Cópiala y pégala como `ALLOWED_ORIGIN` en `worker/index.js` (paso anterior),
-   luego `wrangler deploy` otra vez para que el Worker acepte peticiones desde
-   esa URL.
 
 A partir de aquí, cualquier `git push` a `main` redespliega la web sola.
 
-## Paso 4 — Instalar como app
+## Instalar como app
 
 - **iOS**: Safari → botón compartir → "Añadir a pantalla de inicio"
 - **Android**: Chrome → menú (⋮) → "Instalar aplicación"
@@ -143,9 +137,13 @@ A partir de aquí, cualquier `git push` a `main` redespliega la web sola.
 
 - El modo manual funciona sin conexión ni llamadas a la API: introduces los
   precios verificados tú mismo y la app calcula las combinaciones óptimas
-  igualmente.
+  igualmente. No requiere verificación de Turnstile (no llama a la API).
 - El service worker cachea los assets estáticos (HTML, manifest, iconos) y
   usa network-first para las llamadas al Worker, con un mensaje de error
   claro si no hay conexión.
 - Si las 10 keys de Gemini se agotan a la vez (rate limit o cuota), el
   Worker devuelve un error 502 y el frontend te sugiere el modo manual.
+- Los botones que llaman a la IA (Analizar, Reintentar, Reanalizar) están
+  desactivados hasta completar el widget de Turnstile. El token se consume
+  y se resetea en cada intento — hay que resolver el desafío antes de cada
+  llamada a la API, no solo la primera vez.

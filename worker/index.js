@@ -4,9 +4,10 @@
 // y hace failover automatico si una key esta agotada.
 // ============================================================
 
-const ALLOWED_ORIGIN = "https://PONER_PROYECTO.pages.dev";
-const GEMINI_MODEL = "gemini-2.0-flash";
+const ALLOWED_ORIGIN = "https://optimizador-bono-cultural.lopezmorante08.workers.dev";
+const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const NUM_KEYS = 10;
 
 function corsHeaders() {
@@ -31,6 +32,22 @@ function collectKeys(env) {
     if (k) keys.push(k);
   }
   return keys;
+}
+
+async function verifyTurnstile(token, env, ip) {
+  if (!token || typeof token !== "string") return false;
+  const form = new FormData();
+  form.append("secret", env.TURNSTILE_SECRET);
+  form.append("response", token);
+  if (ip) form.append("remoteip", ip);
+
+  try {
+    const res = await fetch(TURNSTILE_VERIFY_URL, { method: "POST", body: form });
+    const data = await res.json();
+    return data.success === true;
+  } catch {
+    return false;
+  }
 }
 
 async function nextStartIndex(env, keyCount) {
@@ -106,9 +123,14 @@ export default {
       return jsonResponse({ error: "invalid_json" }, 400);
     }
 
-    const { prompt, systemPrompt } = body || {};
+    const { prompt, systemPrompt, turnstileToken } = body || {};
     if (!prompt || typeof prompt !== "string") {
       return jsonResponse({ error: "missing_prompt" }, 400);
+    }
+
+    const humanVerified = await verifyTurnstile(turnstileToken, env, request.headers.get("CF-Connecting-IP"));
+    if (!humanVerified) {
+      return jsonResponse({ error: "human_verification_failed" }, 403);
     }
 
     const keys = collectKeys(env);
